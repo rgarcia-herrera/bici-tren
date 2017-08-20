@@ -18,16 +18,28 @@ function initmap() {
 }
 
 
+
+var bikeIcon = L.icon({
+    iconUrl: 'bike-marker.png',
+
+    iconSize:     [50, 70], // size of the icon
+    iconAnchor:   [25, 0], // point of the icon which will correspond to marker's location
+
+});
+
 var iss;
 
 function update_position() {
     $.getJSON('http://127.0.0.1:5000/static/bike_pos', function(data) {
         var latitude = data["bike_pos"]["latitude"];
         var longitude = data["bike_pos"]["longitude"];
+	console.log(latitude);
         if (!iss) {
-            iss = L.marker([latitude,longitude]).addTo(map);
-        }
-        setTimeout(update_position, 1000);
+            iss = L.marker([latitude,longitude], {icon: bikeIcon}).addTo(map);
+        } else {
+	    iss.setLatLng(new L.LatLng(latitude, longitude));
+	}
+        setTimeout(update_position, 600);
     });
 }
 
