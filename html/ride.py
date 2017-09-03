@@ -18,9 +18,9 @@ model.db.generate_mapping(create_tables=False)
 
 route_url = "http://h2096617.stratoserver.net:443/brouter?lonlats=%s,%s|%s,%s&profile=trekking&alternativeidx=0&format=geojson"
 route = json.loads(urllib2.urlopen(route_url % (-99.133,
-                                                    19.431,
-                                                    -99.137,
-                                                    19.435)).read())
+                                                19.431,
+                                                -99.137,
+                                                19.435)).read())
 coords = route['features'][0]['geometry']['coordinates']
 
 
@@ -32,5 +32,5 @@ while True:
             b.lon = lonlat[0]
             b.lat = lonlat[1]
             print b
-        sleep(3)
+        sleep(1.5)
         
