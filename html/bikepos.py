@@ -1,9 +1,12 @@
+from flask import Flask
+from flask_mongoengine import MongoEngine
+
 from flask import Flask, request, send_from_directory, session
 from flask import jsonify
 
 from flask_cors import CORS, cross_origin
 import model
-from pony.orm import db_session, Database
+
 import time
 import json
 import urllib2
@@ -16,10 +19,7 @@ app = Flask(__name__, static_url_path='')
 app.secret_key = 'F12Zr47j\3yX R~X@H!jmM]Lwf/,?KT'
 CORS(app)
 
-
-model.db.bind('sqlite', 'bikes.sqlite', create_db=False)
-model.db.generate_mapping(create_tables=False)
-
+db = MongoEngine(app)
 
 
 route_url = "http://h2096617.stratoserver.net:443/brouter?lonlats=%s,%s|%s,%s&profile=trekking&alternativeidx=0&format=geojson"

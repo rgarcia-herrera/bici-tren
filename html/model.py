@@ -1,11 +1,12 @@
-from pony.orm import db_session, Database, Required, Json
-
-db = Database()
+from mongoengine import *
 
 class Bike(db.Entity):
-    # tags = Required(Json)
-    lon = Required(float)
-    lat = Required(float)
-    
-    def __repr__(self):
-        return "<bike %s %s %s>" % (self.id, self.lon, self.lat)
+    point = GeoPointField()
+    speed = FloatField()
+
+    # def __repr__(self):
+    #     return "<bike %s %s %s>" % (self.id, self.point)
+
+
+b = Bike(point=[21.1232,23.23432])
+b.save()
