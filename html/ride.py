@@ -4,6 +4,7 @@ import model
 import argparse
 import json
 import urllib2
+from random import uniform
 
 parser = argparse.ArgumentParser(
     description='update bike agent')
@@ -16,16 +17,21 @@ args = parser.parse_args()
 model.db.bind('sqlite', 'bikes.sqlite', create_db=False)
 model.db.generate_mapping(create_tables=False)
 
-route_url = "http://h2096617.stratoserver.net:443/brouter?lonlats=%s,%s|%s,%s&profile=trekking&alternativeidx=0&format=geojson"
-route = json.loads(urllib2.urlopen(route_url % (-99.133,
-                                                19.431,
-                                                -99.137,
-                                                19.435)).read())
-coords = route['features'][0]['geometry']['coordinates']
+route_url = "http://toho.mine.nu/brouter/brouter?lonlats=%s,%s|%s,%s&profile=trekking&alternativeidx=0&format=geojson"
+#/brouter?lonlats=-99.166718,19.407345|-99.09256,19.476627&nogos=&profile=trekking&alternativeidx=0&format=geojson
+
 
 
 while True:
-
+    try:
+        route = json.loads(urllib2.urlopen(route_url % (uniform(-99.1, -99.0),
+                                                    uniform(19.2, 19.5),
+                                                    uniform(-99.1, -99.0),
+                                                    uniform(19.4, 19.5))).read())
+        coords = route['features'][0]['geometry']['coordinates']
+    except:
+        pass
+    
     for lonlat in coords:
         with db_session:    
             b = model.Bike[args.id]
