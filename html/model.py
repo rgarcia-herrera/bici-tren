@@ -1,12 +1,11 @@
-from mongoengine import *
+from mongoengine import Document, connect, GeoPointField, FloatField
 
-class Bike(db.Entity):
+
+
+class Bike(Document):
     point = GeoPointField()
     speed = FloatField()
 
-    # def __repr__(self):
-    #     return "<bike %s %s %s>" % (self.id, self.point)
+    def __str__(self):
+        return "<bike %s %s>" % (self.id, self.point)
 
-
-b = Bike(point=[21.1232,23.23432])
-b.save()
