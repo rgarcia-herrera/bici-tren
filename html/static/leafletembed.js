@@ -31,7 +31,7 @@ function update_position() {
     $.getJSON('http://127.0.0.1:5000/static/bike_pos/59b7217a17a295306646fed0', function(data) {
         var latitude = data["bike_pos"]["latitude"];
         var longitude = data["bike_pos"]["longitude"];
-	console.log(latitude, longitude);
+
         if (!bike_marker) {
             bike_marker = L.marker([latitude,longitude],
 				   {icon: bikeIcon}).addTo(map);
