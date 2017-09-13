@@ -10,15 +10,20 @@ parser.add_argument('--lon', type=float, required=True,
 parser.add_argument('--lat', type=float, required=True,
                     help='latitude')
 
-parser.add_argument('--id', required=True,
+parser.add_argument('--id', default='new',
                     help='bike id')
 
 args = parser.parse_args()
 
 model.connect('mydb')
 
-b = model.Bike.objects.with_id(args.id)
-b.point=[args.lon, args.lat]
-b.save()
+
+if args.id == 'new':
+    b = model.Bike(point=(args.lon, args.lat))
+    b.save()    
+else:
+    b = model.Bike.objects.with_id(args.id)
+    b.point=[args.lon, args.lat]
+    b.save()
 
 print b
