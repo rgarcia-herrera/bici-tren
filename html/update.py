@@ -23,7 +23,6 @@ if args.id == 'new':
     b.save()    
 else:
     b = model.Bike.objects.with_id(args.id)
-    b.point=[args.lon, args.lat]
-    b.save()
+    b.update((args.lon, args.lat))
 
 print b

@@ -4,6 +4,7 @@ import argparse
 import json
 import urllib2
 from random import uniform
+from pprint import pprint
 
 parser = argparse.ArgumentParser(
     description='update bike agent')
@@ -24,13 +25,14 @@ while True:
                                          uniform(19.2, 19.5),
                                          uniform(-99.1, -99.0),
                                          uniform(19.4, 19.5))).read())
+        pprint(route)
         coords = route['features'][0]['geometry']['coordinates']
     except:
         pass
 
     b = model.Bike.objects.with_id(args.id)
     for lonlat in coords:
-        b.point = (lonlat[1], lonlat[0])
-        b.save()
+        print lonlat
+        b.update((lonlat[1], lonlat[0]))
         print b
         sleep(1.5)
