@@ -21,10 +21,11 @@ class Bike(Document):
 
     def to_dict(self):
         return {'point': self.point,
+                'predicted_point': self.predicted_point(),
                 'speed': self.speed,
                 'heading': self.heading,
                 'destination': self.destination,
-                'stamp': self.stamp}
+                'stamp': str(self.stamp)}
 
     def __str__(self):
         return "<bike %s %s @%sm/s>" % (self.id, self.point, self.speed)
@@ -57,7 +58,7 @@ class Bike(Document):
         (x1, y1,
          ZONE_NUMBER,
          ZONE_LETTER) = utm.from_latlon(
-             swap_coords(*self.point['coordinates']))
+             *swap_coords(self.point['coordinates']))
 
         x2 = x1 + cos(self.heading) * self.speed
         y2 = y1 + sin(self.heading) * self.speed

@@ -1,6 +1,6 @@
 from flask import Flask, send_from_directory
 from flask import jsonify
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 
 import model
 import time
@@ -23,6 +23,12 @@ def bike_pos(bike_id):
                              'longitude': b.point[1]},
                    message='success',
                    timestamp=str(time.time()).split('.')[0])
+
+
+@app.route('/bike/<bike_id>')
+def get_bike(bike_id):
+    b = model.Bike.objects.with_id(bike_id)
+    return jsonify(b.to_dict())
 
 
 @app.route('/static/<path:path>')
