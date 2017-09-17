@@ -24,12 +24,20 @@ var bikeIcon = L.icon({
 
 });
 
-var bike_marker = false;
+var bike_marker = false,
+    dest_marker = false;
 
 function update_position() {
 
     $.getJSON('http://127.0.0.1:5000/bike/59bd54a517a2952ed563a1c0', function(data) {
-	console.log(data);
+
+
+        var dlong = data["destination"]["coordinates"][0];	
+        var dlat = data["destination"]["coordinates"][1];
+        if (!dest_marker) {	
+            dest_marker = L.marker([dlat, dlong]).addTo(map);
+	}
+	
         var longitude = data["point"]["coordinates"][0];	
         var latitude = data["point"]["coordinates"][1];
 
@@ -40,7 +48,7 @@ function update_position() {
 	    bike_marker.setLatLng(new L.LatLng(latitude,
 					       longitude));
 	}
-        setTimeout(update_position, 600);
+        setTimeout(update_position, 500);
     });
 }
 
@@ -51,16 +59,16 @@ function update_animation() {
 
     $.getJSON('http://127.0.0.1:5000/bike/59bd54a517a2952ed563a1c0',
 	      function(data) {
+		  // console.log(data);
+		  
 		  var src = [data['point']['coordinates'][1],
 			     data['point']['coordinates'][0]]
 		  var dst = [data['predicted_point'][1],
 			     data['predicted_point'][0]]
-		  dst = [19.476827, -99.140168]
-		  
+		  // dst = [19.476827, -99.140168]
+		  console.log(src[0], src[1], dst[0], dst[1]);
 		  var line = L.polyline([src, dst]);
 					 
-		  console.log(line);
-		  
 		  if (!animated_marker) {
 		      animated_marker = L.animatedMarker(line.getLatLngs(),
 							 {distance: data['speed'], // speed is m/s

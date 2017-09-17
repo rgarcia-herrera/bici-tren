@@ -2,8 +2,9 @@ from mongoengine import Document, FloatField, \
     DateTimeField, PointField, LineStringField, \
     connect  # must import connect, used from without
 from datetime import datetime
-from math import sqrt, sin, cos
+from math import sin, cos, atan
 import utm
+from util import distance, swap_coords
 
 from pprint import pprint
 
@@ -21,7 +22,6 @@ class Bike(Document):
 
     def to_dict(self):
         return {'point': self.point,
-                'predicted_point': self.predicted_point(),
                 'speed': self.speed,
                 'heading': self.heading,
                 'destination': self.destination,
@@ -30,58 +30,45 @@ class Bike(Document):
     def __str__(self):
         return "<bike %s %s @%sm/s>" % (self.id, self.point, self.speed)
 
+    def get_xy(self):
+        return utm.from_latlon(*swap_coords(self.point))
+
+    def set_xy(self, x, y, ZONE_NUMBER, ZONE_LETTER):
+        self.point = swap_coords(utm.to_latlon(x, y, ZONE_NUMBER, ZONE_LETTER))
+
     def update(self, new_point):
         (x1, y1,
          ZONE_NUMBER,
-         ZONE_LETTER) = utm.from_latlon(*swap_coords(self.point))
-
-        self.point = new_point
+         ZONE_LETTER) = self.get_xy()
 
         (x2, y2,
          ZONE_NUMBER,
          ZONE_LETTER) = utm.from_latlon(*swap_coords(new_point))
 
-        now = datetime.now()
-        tdelta = now - self.stamp
+        tdelta = datetime.now() - self.stamp
         seconds = tdelta.total_seconds()
 
-        self.speed = sqrt((x2 - x1)**2 * (y2 - y1)**2) / seconds
+        self.speed = distance(x1, y1, x2, y2) / seconds
 
         try:
-            self.heading = (x2 - x1) / (y2 - y1)
+            self.heading = atan((y2-y1) / (x2-x1))
         except ZeroDivisionError:
             self.heading = 0
 
-        self.stamp = now
+        self.stamp = datetime.now()
+        self.point = new_point
 
-    def predicted_point(self):
-        (x1, y1,
-         ZONE_NUMBER,
-         ZONE_LETTER) = utm.from_latlon(
-             *swap_coords(self.point['coordinates']))
+    def delta_x(self):
+        tdelta = datetime.now() - self.stamp
+        seconds = tdelta.total_seconds()
 
-        x2 = x1 + cos(self.heading) * self.speed
-        y2 = y1 + sin(self.heading) * self.speed
+        distance = seconds * self.speed
 
-        return swap_coords(utm.to_latlon(x2, y2,
-                                         ZONE_NUMBER,
-                                         ZONE_LETTER))
+        return sin(self.heading) * distance
 
-    # def update_current_segment(self):
-    #     a = [[self.point[0],
-    #           self.point[1]],
-    #          [self.predicted_point()[0],
-    #           self.predicted_point()[1]]]
-    #     pprint(a)
-    #     self.current_segment = {'type': 'LineString',
-    #                             'coordinates': a}
+    def delta_y(self):
+        tdelta = datetime.now() - self.stamp
+        seconds = tdelta.total_seconds()
 
-    # def route(self):
-    #     route = json.loads(
-    #         urllib2.urlopen(route_url % (self.point[0],
-    #                                      self.point[1],
-    #                                      self.destination[0],
-    #                                      self.destination[1])).read())
-    #     coords = route['features'][0]['geometry']['coordinates']
-    #     pprint(coords)
-    #     return coords
+        distance = seconds * self.speed
+        return cos(self.heading) * distance
