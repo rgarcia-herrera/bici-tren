@@ -34,17 +34,14 @@ for c in coords:
 
     xycoords.append([x, y])
 
-wp = []
+waypoints = []
 for i in range(1, len(xycoords)):
     a = xycoords[i-1]
     b = xycoords[i]
-    wp += segment(a, b, args.speed)
+    waypoints += segment(a, b, args.speed)
 
-
-waypoints = sorted(xycoords + wp)
-pprint(waypoints)
 plt.plot([p[0] for p in waypoints],
-         [p[1] for p in waypoints], 'o')
+         [p[1] for p in waypoints], 'o-')
 plt.axis('equal')
 plt.show()
 

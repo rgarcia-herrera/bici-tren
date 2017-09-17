@@ -11,7 +11,7 @@ def distance(x1, y1, x2, y2):
 
 
 def segment(a, b, dist):
-    wp = []
+    wp = [[a[0], a[1]], ]
     for i in range(1, int(distance(a[0], a[1], b[0], b[1])/dist)):
         try:
             heading = atan((b[1]-a[1]) / (b[0]-a[0]))
