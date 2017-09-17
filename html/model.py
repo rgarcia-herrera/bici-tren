@@ -2,15 +2,9 @@ from mongoengine import Document, FloatField, \
     DateTimeField, PointField, LineStringField, \
     connect  # must import connect, used from without
 from datetime import datetime
-from math import sin, cos, atan
+from math import atan
 import utm
 from util import distance, swap_coords
-
-from pprint import pprint
-
-
-def swap_coords(coords):
-    return [coords[1], coords[0]]
 
 
 class Bike(Document):
@@ -34,7 +28,8 @@ class Bike(Document):
         return utm.from_latlon(*swap_coords(self.point))
 
     def set_xy(self, x, y, ZONE_NUMBER, ZONE_LETTER):
-        self.point = swap_coords(utm.to_latlon(x, y, ZONE_NUMBER, ZONE_LETTER))
+        new_point = swap_coords(utm.to_latlon(x, y, ZONE_NUMBER, ZONE_LETTER))
+        self.update(new_point)
 
     def update(self, new_point):
         (x1, y1,
@@ -52,23 +47,8 @@ class Bike(Document):
 
         try:
             self.heading = atan((y2-y1) / (x2-x1))
-        except ZeroDivisionError:
+        except:
             self.heading = 0
 
         self.stamp = datetime.now()
         self.point = new_point
-
-    def delta_x(self):
-        tdelta = datetime.now() - self.stamp
-        seconds = tdelta.total_seconds()
-
-        distance = seconds * self.speed
-
-        return sin(self.heading) * distance
-
-    def delta_y(self):
-        tdelta = datetime.now() - self.stamp
-        seconds = tdelta.total_seconds()
-
-        distance = seconds * self.speed
-        return cos(self.heading) * distance
