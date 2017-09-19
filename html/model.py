@@ -2,9 +2,10 @@ from mongoengine import Document, FloatField, \
     DateTimeField, PointField, LineStringField, \
     connect  # must import connect, used from without
 from datetime import datetime
-from math import atan
+from math import atan, degrees
 import utm
 from util import distance, swap_coords
+import svgwrite
 
 
 class Bike(Document):
@@ -52,3 +53,13 @@ class Bike(Document):
 
         self.stamp = datetime.now()
         self.point = new_point
+
+
+    def flecha(self, color='green'):
+        dwg=svgwrite.Drawing()
+        dwg.viewbox(width=100, height=100)
+        p = svgwrite.shapes.Polygon(points=[[50,20], [30, 80], [70,80]], fill=color, opacity=0.3)
+        p.rotate(degrees(self.heading),
+                 center=(50,50))
+        dwg.add(p)
+        return dwg.tostring()
