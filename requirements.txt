@@ -1,4 +1,5 @@
 Flask
 Flask-Cors
-pony
+mongoengine
+svgwrite
 

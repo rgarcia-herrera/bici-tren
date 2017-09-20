@@ -12,6 +12,7 @@ class Bike(Document):
     point = PointField()
     speed = FloatField(default=0)
     heading = FloatField(default=0)
+    destination_heading = FloatField(default=0)
     destination = PointField(required=False)
     stamp = DateTimeField(default=datetime.now)
 
@@ -41,6 +42,10 @@ class Bike(Document):
          ZONE_NUMBER,
          ZONE_LETTER) = utm.from_latlon(*swap_coords(new_point))
 
+        (xd, yd,
+         ZONE_NUMBER,
+         ZONE_LETTER) = utm.from_latlon(*swap_coords(self.destination))
+
         tdelta = datetime.now() - self.stamp
         seconds = tdelta.total_seconds()
 
@@ -51,15 +56,22 @@ class Bike(Document):
         except:
             self.heading = 0
 
+        try:
+            self.destination_heading = atan((yd-y2) / (xd-x2))
+        except:
+            self.destination_heading = 0
+
         self.stamp = datetime.now()
         self.point = new_point
 
-
-    def flecha(self, color='green'):
-        dwg=svgwrite.Drawing()
+    def marker(self, color='green'):
+        dwg = svgwrite.Drawing()
         dwg.viewbox(width=100, height=100)
-        p = svgwrite.shapes.Polygon(points=[[50,20], [30, 80], [70,80]], fill=color, opacity=0.3)
-        p.rotate(degrees(self.heading),
-                 center=(50,50))
+        p = svgwrite.shapes.Polygon(points=[[50, 20],
+                                            [30, 80],
+                                            [70, 80]],
+                                    fill=color, opacity=0.3)
+        p.rotate(degrees(self.destination_heading),
+                 center=(50, 50))
         dwg.add(p)
         return dwg.tostring()

@@ -1,9 +1,9 @@
+from jinja2 import Environment, FileSystemLoader
 from flask import Flask, send_from_directory
-from flask import jsonify
+from flask import jsonify, Response
 from flask_cors import CORS
 
 import model
-import time
 
 from pprint import pprint
 
@@ -14,15 +14,19 @@ CORS(app)
 
 model.connect('mydb')
 
+env = Environment(loader=FileSystemLoader('templates'))
 
-@app.route('/static/bike_pos/<bike_id>')
-def bike_pos(bike_id):
 
+@app.route('/bike/<bike_id>/marker')
+def bike_marker(bike_id):
     b = model.Bike.objects.with_id(bike_id)
-    return jsonify(bike_pos={'latitude': b.point[0],
-                             'longitude': b.point[1]},
-                   message='success',
-                   timestamp=str(time.time()).split('.')[0])
+    return Response(b.marker(), mimetype="text/xml")
+
+
+@app.route('/bike/<bike_id>/map')
+def get_map(bike_id):
+    template = env.get_template('map.html')
+    return template.render(bike_id=bike_id)
 
 
 @app.route('/bike/<bike_id>')
