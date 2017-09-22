@@ -17,17 +17,21 @@ model.connect('mydb')
 env = Environment(loader=FileSystemLoader('templates'))
 
 
-@app.route('/bike/<bike_id>_marker.svg')
-def bike_marker(bike_id):
+@app.route('/bike/<stamp>/<bike_id>_marker.svg')
+def bike_marker(stamp, bike_id):
     b = model.Bike.objects.with_id(bike_id)
     return Response(b.marker(),
-                    mimetype="text/xml")
+                    headers={'Cache-Control': 'no-cache, no-store, must-revalidate',
+                             'Pragma': 'no-cache'},
+                    mimetype="image/svg+xml")
 
 
 @app.route('/bike/<bike_id>/map')
 def get_map(bike_id):
     template = env.get_template('map.html')
-    return template.render(bike_id=bike_id)
+    return Response(template.render(bike_id=bike_id),
+                    headers={'Cache-Control': 'no-cache, no-store, must-revalidate',
+                             'Pragma': 'no-cache'})
 
 
 @app.route('/bike/<bike_id>')

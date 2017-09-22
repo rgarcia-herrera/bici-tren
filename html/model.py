@@ -6,7 +6,7 @@ from math import atan, degrees
 import utm
 from util import distance, swap_coords
 import svgwrite
-
+from random import randint
 
 class Bike(Document):
     point = PointField()
@@ -57,23 +57,21 @@ class Bike(Document):
             self.heading = 0
 
         try:
-            self.destination_heading = atan((yd-y2) / (xd-x2))
+            self.destination_heading = atan((yd-y1) / (xd-x1))
         except:
             self.destination_heading = 0
 
         self.stamp = datetime.now()
         self.point = new_point
 
-    def marker(self, color='green'):
+    def marker(self, color='red'):
         dwg = svgwrite.Drawing()
         dwg.viewbox(width=100, height=100)
         p = svgwrite.shapes.Polygon(points=[[50, 20],
                                             [30, 80],
                                             [70, 80]],
-                                    fill=color, opacity=0.3)
-        p.rotate(degrees(self.destination_heading),
-                 center=(50, 50))
+                                    fill=color, opacity=0.9)
+        p.rotate(degrees(self.destination_heading)+180,
+                 center=(50, 50))        
         dwg.add(p)
         return dwg.tostring()
-        # i = Image(blob=
-        # return i.make_blob(format='png')

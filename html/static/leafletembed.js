@@ -1,9 +1,5 @@
-var map;
-var ajaxRequest;
-var plotlist;
-var plotlayers=[];
-
 var bike_id = document.currentScript.getAttribute('bike_id');
+var map;
 
 function initmap() {
 	// set up the map
@@ -19,41 +15,40 @@ function initmap() {
 }
 
 
-// var bikeIcon = L.icon({
-//     iconUrl: 'http://127.0.0.1:5000/bike/' + bike_id + '/marker',
-//     iconSize:     [50, 70],
-//     iconAnchor:   [24, 69],
-
-// });
 
 
 var bike_marker = false,
-    dest_marker = false;
+    dest_marker = false,
+    bikeIcon = false;
+
+var markers;
+markers = new L.LayerGroup();
 
 function update_position() {
-
     $.getJSON('http://127.0.0.1:5000/bike/' + bike_id, function(data) {
 
-	var bikeIcon = L.divIcon({html:"<img src='/bike/" + bike_id + "_marker.svg' width='50px' />",
-				  iconSize: [50, 70],
-				  iconAnchor: [24, 69]});
-	
-        var dlong = data["destination"]["coordinates"][0];	
-        var dlat = data["destination"]["coordinates"][1];
-        if (!dest_marker) {	
-            dest_marker = L.marker([dlat, dlong]).addTo(map);
-	}
-	
+        dlong = data["destination"]["coordinates"][0];	
+        dlat = data["destination"]["coordinates"][1];
+        dest_marker = L.marker([dlat, dlong]);
+
+
         var longitude = data["point"]["coordinates"][0];	
         var latitude = data["point"]["coordinates"][1];
+	bikeIcon = L.icon({
+	    iconUrl: 'http://127.0.0.1:5000/bike/' + data['stamp'] +
+		'/' + bike_id + '_marker.svg',
+	    iconSize:     [50, 70],
+	    iconAnchor:   [24, 69],
+	});	
+	bike_marker = L.marker([latitude, longitude],
+			       {icon: bikeIcon});
 
-        if (!bike_marker) {
-            bike_marker = L.marker([latitude, longitude],
-				   {icon: bikeIcon}).addTo(map);
-        } else {
-	    bike_marker.setLatLng(new L.LatLng(latitude,
-					       longitude));
-	}
-        setTimeout(update_position, 500);
+
+	markers.clearLayers();
+	dest_marker.addTo(markers);
+	bike_marker.addTo(markers);
+	markers.addTo(map);
+        setTimeout(update_position, 1000);
+
     });
 }
