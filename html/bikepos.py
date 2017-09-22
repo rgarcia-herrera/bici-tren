@@ -1,6 +1,7 @@
 from jinja2 import Environment, FileSystemLoader
-from flask import Flask, send_from_directory
-from flask import jsonify, Response
+from flask import Flask, send_from_directory, send_file
+from flask import jsonify
+import io
 from flask_cors import CORS
 
 import model
@@ -20,7 +21,9 @@ env = Environment(loader=FileSystemLoader('templates'))
 @app.route('/bike/<bike_id>/marker')
 def bike_marker(bike_id):
     b = model.Bike.objects.with_id(bike_id)
-    return Response(b.marker(), mimetype="text/xml")
+    return send_file(io.BytesIO(b.marker(),
+                     attachment_filename='marker.png',
+                     mimetype='image/png'))
 
 
 @app.route('/bike/<bike_id>/map')
