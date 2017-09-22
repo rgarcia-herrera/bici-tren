@@ -19,12 +19,13 @@ function initmap() {
 }
 
 
-var bikeIcon = L.icon({
-    iconUrl: 'http://127.0.0.1:5000/bike/' + bike_id + '/marker',
-    iconSize:     [50, 70],
-    iconAnchor:   [24, 69],
+// var bikeIcon = L.icon({
+//     iconUrl: 'http://127.0.0.1:5000/bike/' + bike_id + '/marker',
+//     iconSize:     [50, 70],
+//     iconAnchor:   [24, 69],
 
-});
+// });
+
 
 var bike_marker = false,
     dest_marker = false;
@@ -33,7 +34,10 @@ function update_position() {
 
     $.getJSON('http://127.0.0.1:5000/bike/' + bike_id, function(data) {
 
-
+	var bikeIcon = L.divIcon({html:"<img src='/bike/" + bike_id + "_marker.svg' width='50px' />",
+				  iconSize: [50, 70],
+				  iconAnchor: [24, 69]});
+	
         var dlong = data["destination"]["coordinates"][0];	
         var dlat = data["destination"]["coordinates"][1];
         if (!dest_marker) {	

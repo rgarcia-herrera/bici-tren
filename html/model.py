@@ -6,7 +6,6 @@ from math import atan, degrees
 import utm
 from util import distance, swap_coords
 import svgwrite
-from wand.image import Image
 
 
 class Bike(Document):
@@ -75,5 +74,6 @@ class Bike(Document):
         p.rotate(degrees(self.destination_heading),
                  center=(50, 50))
         dwg.add(p)
-        i = Image(blob=dwg.tostring(), format='svg')
-        return i.make_blob(format='png')
+        return dwg.tostring()
+        # i = Image(blob=
+        # return i.make_blob(format='png')
