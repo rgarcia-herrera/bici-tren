@@ -2,11 +2,7 @@ from time import sleep
 import model
 import argparse
 import json
-import matplotlib.pyplot as plt
-import utm
-from util import segment
-
-from pprint import pprint
+from LatLon import LatLon, Latitude, Longitude
 
 parser = argparse.ArgumentParser(
     description='ride bike at speed thru route')
@@ -22,28 +18,8 @@ args = parser.parse_args()
 model.connect('mydb')
 route = json.loads(args.geojson.read())
 
-
-coords = route['features'][0]['geometry']['coordinates']
-
-xycoords = []
-for c in coords:
-    (x, y,
-     ZONE_NUMBER,
-     ZONE_LETTER) = utm.from_latlon(c[1],
-                                    c[0])
-
-    xycoords.append([x, y])
-
-waypoints = []
-for i in range(1, len(xycoords)):
-    a = xycoords[i-1]
-    b = xycoords[i]
-    waypoints += segment(a, b, args.speed)
-
-plt.plot([p[0] for p in waypoints],
-         [p[1] for p in waypoints], 'o-')
-plt.axis('equal')
-plt.show()
+coords = [[c[0], c[1]]
+          for c in route['features'][0]['geometry']['coordinates']]
 
 start = [coords[0][0],
          coords[0][1]]
@@ -52,21 +28,36 @@ end = [coords[-1][0],
        coords[-1][1]]
 
 if args.id == 'new':
-    b = model.Bike(point=start,
-                   destination=end,
-                   speed=args.speed)
-    b.save()
+    b = model.Bike()
 else:
     b = model.Bike.objects.with_id(args.id)
-    b.point = start
-    b.destination = end
-    b.speed = args.speed
-    b.save()
+
+b.point = start
+b.destination = end
+b.speed = args.speed
+b.save()
 
 print "riding:", b
 
-for p in waypoints:
-    b.set_xy(p[0], p[1], ZONE_NUMBER, ZONE_LETTER)
+
+def waypoints(coords, step):
+    for i in range(1, len(coords)):
+        a = LatLon(Latitude(b.point[1]),
+                   Longitude(b.point[0]))
+        c = LatLon(Latitude(coords[i][1]),
+                   Longitude(coords[i][0]))
+        if a.distance(c) < step:
+            print "reached waypoint %s" % c
+            yield [c.lon.decimal_degree,
+                   c.lat.decimal_degree]
+        else:
+            dst = a.offset(a.heading_initial(c), step)
+            yield [dst.lon.decimal_degree,
+                   dst.lat.decimal_degree]
+
+
+for p in waypoints(coords, args.speed / 1000.0):
+    b.update(p)
     b.save()
     print b
     sleep(1)
