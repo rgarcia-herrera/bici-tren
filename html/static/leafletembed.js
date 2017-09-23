@@ -29,7 +29,7 @@ function update_position() {
 
         dlong = data["destination"]["coordinates"][0];	
         dlat = data["destination"]["coordinates"][1];
-        dest_marker = L.marker([dlat, dlong]);
+        dest_marker = new L.Marker([dlat, dlong]);
 
 
         var longitude = data["point"]["coordinates"][0];	
@@ -40,8 +40,8 @@ function update_position() {
 	    iconSize:     [50, 70],
 	    iconAnchor:   [24, 69],
 	});	
-	bike_marker = L.marker([latitude, longitude],
-			       {icon: bikeIcon});
+	bike_marker = new L.Marker([latitude, longitude],
+				   {icon: bikeIcon});
 
 
 	markers.clearLayers();
