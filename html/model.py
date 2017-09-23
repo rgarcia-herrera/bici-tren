@@ -2,11 +2,9 @@ from mongoengine import Document, FloatField, \
     DateTimeField, PointField, LineStringField, \
     connect  # must import connect, used from without
 from datetime import datetime
-from math import atan, degrees
 import utm
-from util import distance, swap_coords
+from util import swap_coords
 import svgwrite
-from random import randint
 from LatLon import LatLon, Latitude, Longitude
 
 
@@ -50,10 +48,11 @@ class Bike(Document):
 
         self.heading = a.heading_initial(b)
         self.destination_heading = b.heading_initial(c)
-        
-        # tdelta = datetime.now() - self.stamp
-        # seconds = tdelta.total_seconds()
-        # self.speed = distance(x1, y1, x2, y2) / seconds
+
+        tdelta = datetime.now() - self.stamp
+        seconds = tdelta.total_seconds()
+        distance = a.distance(b) / 1000.0
+        self.speed = distance / seconds
 
         self.stamp = datetime.now()
         self.point = new_point
