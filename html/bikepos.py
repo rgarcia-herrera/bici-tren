@@ -17,8 +17,8 @@ model.connect('mydb')
 env = Environment(loader=FileSystemLoader('templates'))
 
 
-@app.route('/bike/<stamp>/<bike_id>_marker.svg')
-def bike_marker(stamp, bike_id):
+@app.route('/bike/<destination_heading>/<bike_id>_marker.svg')
+def bike_marker(destination_heading, bike_id):
     b = model.Bike.objects.with_id(bike_id)
     return Response(b.marker(),
                     headers={'Cache-Control': 'no-cache, no-store, must-revalidate',
