@@ -20,6 +20,7 @@ class Bike(Document):
         return {'point': self.point,
                 'speed': self.speed,
                 'heading': self.heading,
+                'destination_heading': self.destination_heading,
                 'destination': self.destination,
                 'stamp': str(self.stamp)}
 
@@ -60,11 +61,20 @@ class Bike(Document):
     def marker(self, color='red'):
         dwg = svgwrite.Drawing()
         dwg.viewbox(width=100, height=100)
-        p = svgwrite.shapes.Polygon(points=[[50, 20],
-                                            [30, 80],
-                                            [70, 80]],
-                                    fill=color, opacity=0.9)
-        p.rotate(self.destination_heading,
+        dh = svgwrite.shapes.Polygon(points=[[50, 20],
+                                             [30, 80],
+                                             [70, 80]],
+                                     fill='blue', opacity=0.6)
+        dh.rotate(self.destination_heading,
+                  center=(50, 50))
+
+        h = svgwrite.shapes.Polygon(points=[[50, 30],
+                                            [35, 75],
+                                            [65, 75]],
+                                    fill='yellow', opacity=0.44)
+        h.rotate(self.heading,
                  center=(50, 50))
-        dwg.add(p)
+        dwg.add(dh)
+        dwg.add(h)
+        
         return dwg.tostring()
