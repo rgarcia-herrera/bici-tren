@@ -18,6 +18,7 @@ function initmap() {
 
 
 var bike_marker = false,
+    bike_bg = false,
     dest_marker = false,
     bikeIcon = false;
 
@@ -35,7 +36,7 @@ function update_position() {
         var longitude = data["point"]["coordinates"][0];	
         var latitude = data["point"]["coordinates"][1];
 	bikeIcon = L.icon({
-	    iconUrl: 'http://127.0.0.1:5000/bike/' + data['stamp'] +
+	    iconUrl: 'http://127.0.0.1:5000/bike/' + data['destination_heading'] +
 		'/' + bike_id + '_marker.svg',
 	    iconSize:     [50, 70],
 	    iconAnchor:   [24, 69],
@@ -43,9 +44,11 @@ function update_position() {
 	bike_marker = new L.Marker([latitude, longitude],
 				   {icon: bikeIcon});
 
+	bike_bg = new L.Marker([latitude, longitude]);
 
 	markers.clearLayers();
 	dest_marker.addTo(markers);
+	bike_bg.addTo(markers);		
 	bike_marker.addTo(markers);
 	markers.addTo(map);
         setTimeout(update_position, 1000);
