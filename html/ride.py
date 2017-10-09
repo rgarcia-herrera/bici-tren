@@ -46,14 +46,18 @@ def waypoints(coords, step):
                    Longitude(b.point[0]))
         c = LatLon(Latitude(coords[i][1]),
                    Longitude(coords[i][0]))
-        if a.distance(c) <= step:
-            print "reached waypoint %s" % c
-            yield [coords[i][0],
-                   coords[i][1]]
-        else:
+        while a.distance(c) > step:
             dst = a.offset(a.heading_initial(c), step)
             yield [dst.lon.decimal_degree,
                    dst.lat.decimal_degree]
+            a = LatLon(Latitude(b.point[1]),
+                       Longitude(b.point[0]))
+            c = LatLon(Latitude(coords[i][1]),
+                       Longitude(coords[i][0]))
+
+        print "reached waypoint %s" % c
+        yield [coords[i][0],
+               coords[i][1]]
 
 
 for p in waypoints(coords, args.speed / 1000.0):
