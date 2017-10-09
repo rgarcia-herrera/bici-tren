@@ -76,5 +76,11 @@ class Bike(Document):
                  center=(50, 50))
         dwg.add(dh)
         dwg.add(h)
-        
+
         return dwg.tostring()
+
+    def get_near_bikes(self):
+        return Bike.objects(point__near=self.point,
+                            point__max_distance=1000,
+                            destination__near=self.destination,
+                            destination__max_distance=500)
