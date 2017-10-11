@@ -1,6 +1,6 @@
 from jinja2 import Environment, FileSystemLoader
 from flask import Flask, send_from_directory
-from flask import jsonify, Response
+from flask import jsonify, Response, request
 from flask_cors import CORS
 
 import model
@@ -34,6 +34,15 @@ def get_map(bike_id):
 def get_bike(bike_id):
     b = model.Bike.objects.with_id(bike_id)
     return jsonify(b.to_dict())
+
+
+@app.route('/bikes_in/')
+def bikes_in():
+    return jsonify([b.to_dict() for b in model.Bike.objects(
+        point__geo_within_box=[(float(request.args.get('sw_lng')),
+                                float(request.args.get('sw_lat'))),
+                               (float(request.args.get('ne_lng')),
+                                float(request.args.get('ne_lat')))])])
 
 
 @app.route('/static/<path:path>')
