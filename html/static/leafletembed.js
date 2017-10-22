@@ -1,4 +1,4 @@
-var bike_id = document.currentScript.getAttribute('bike_id');
+// var bike_id = document.currentScript.getAttribute('bike_id');
 var map;
 
 function initmap() {
@@ -15,21 +15,6 @@ function initmap() {
 }
 
 
-function get_bikes() {
-    ne_lat = map.getBounds()['_northEast']['lat']
-    ne_lng = map.getBounds()['_northEast']['lng']
-    sw_lat = map.getBounds()['_southWest']['lat']
-    sw_lng = map.getBounds()['_southWest']['lng']
-
-    $.getJSON('http://127.0.0.1:5000/bikes_in/?'+`ne_lat=${ne_lat}&ne_lng=${ne_lng}&sw_lat=${sw_lat}&sw_lng=${sw_lng}`,
-	      function(data) {
-		  console.log(data);
-		  for (n of data) {
-		      console.log(n);
-		  }
-	      });
-}
-
 var bike_marker = false,
     bike_bg = false,
     dest_marker = false,
@@ -38,33 +23,80 @@ var bike_marker = false,
 var markers;
 markers = new L.LayerGroup();
 
-function update_position() {
-    $.getJSON('http://127.0.0.1:5000/bike/' + bike_id, function(data) {
 
-	dlong = data["destination"]["coordinates"][0];
-	dlat = data["destination"]["coordinates"][1];
-	dest_marker = new L.Marker([dlat, dlong]);
+function get_bikes() {
+    ne_lat = map.getBounds()['_northEast']['lat']
+    ne_lng = map.getBounds()['_northEast']['lng']
+    sw_lat = map.getBounds()['_southWest']['lat']
+    sw_lng = map.getBounds()['_southWest']['lng']
+
+    $.getJSON('http://127.0.0.1:5000/bikes_in/?'+`ne_lat=${ne_lat}&ne_lng=${ne_lng}&sw_lat=${sw_lat}&sw_lng=${sw_lng}`,
+	      function(bikes) {
+		  markers.clearLayers();
+		  for (b of bikes) {
+		      // console.log(b);
+
+		      dest_icon = L.icon({
+			  iconUrl: 'http://127.0.0.1:5000/static/finish-line.png',
+			  iconSize: [30, 35],
+			  iconAnchor: [14, 17],
+		      });
+
+		      dlong = b["destination"]["coordinates"][0];
+		      dlat = b["destination"]["coordinates"][1];
+		      dest_marker = new L.Marker([dlat, dlong],
+						 {icon: dest_icon});
+
+		      var longitude = b["point"]["coordinates"][0];
+		      var latitude = b["point"]["coordinates"][1];
+		      bikeIcon = L.icon({
+			  iconUrl: 'http://127.0.0.1:5000/bike/' + b['destination_heading'] +
+			      '/' + b['bike_id'] + '_marker.svg',
+			  iconSize:     [50, 70],
+			  iconAnchor:   [24, 69]});
+		      bike_marker = new L.Marker([latitude, longitude],
+						 {icon: bikeIcon});
 
 
-	var longitude = data["point"]["coordinates"][0];
-	var latitude = data["point"]["coordinates"][1];
-	bikeIcon = L.icon({
-	    iconUrl: 'http://127.0.0.1:5000/bike/' + data['destination_heading'] +
-		'/' + bike_id + '_marker.svg',
-	    iconSize:     [50, 70],
-	    iconAnchor:   [24, 69],
-	});
-	bike_marker = new L.Marker([latitude, longitude],
-				   {icon: bikeIcon});
+		      bike_bg = new L.Marker([latitude, longitude]);
 
-	bike_bg = new L.Marker([latitude, longitude]);
-
-	markers.clearLayers();
-	dest_marker.addTo(markers);
-	bike_bg.addTo(markers);
-	bike_marker.addTo(markers);
-	markers.addTo(map);
-	setTimeout(update_position, 1000);
-
-    });
+		      dest_marker.addTo(markers);
+		      bike_bg.addTo(markers);
+		      bike_marker.addTo(markers);
+		      markers.addTo(map);
+		      // setTimeout(update_position, 1000);
+		  }
+	      });
 }
+
+
+// function update_position() {
+//     $.getJSON('http://127.0.0.1:5000/bike/' + bike_id, function(data) {
+
+//	dlong = data["destination"]["coordinates"][0];
+//	dlat = data["destination"]["coordinates"][1];
+//	dest_marker = new L.Marker([dlat, dlong]);
+
+
+//	var longitude = data["point"]["coordinates"][0];
+//	var latitude = data["point"]["coordinates"][1];
+//	bikeIcon = L.icon({
+//	    iconUrl: 'http://127.0.0.1:5000/bike/' + data['destination_heading'] +
+//		'/' + bike_id + '_marker.svg',
+//	    iconSize:     [50, 70],
+//	    iconAnchor:   [24, 69],
+//	});
+//	bike_marker = new L.Marker([latitude, longitude],
+//				   {icon: bikeIcon});
+
+//	bike_bg = new L.Marker([latitude, longitude]);
+
+//	markers.clearLayers();
+//	dest_marker.addTo(markers);
+//	bike_bg.addTo(markers);
+//	bike_marker.addTo(markers);
+//	markers.addTo(map);
+//	setTimeout(update_position, 1000);
+
+//     });
+// }

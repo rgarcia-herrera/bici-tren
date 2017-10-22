@@ -17,7 +17,8 @@ class Bike(Document):
     stamp = DateTimeField(default=datetime.now)
 
     def to_dict(self):
-        return {'point': self.point,
+        return {'bike_id': "%s" % self.id,
+                'point': self.point,
                 'speed': self.speed,
                 'heading': self.heading,
                 'destination_heading': self.destination_heading,
@@ -71,7 +72,10 @@ class Bike(Document):
         h = svgwrite.shapes.Polygon(points=[[50, 30],
                                             [35, 75],
                                             [65, 75]],
-                                    fill='yellow', opacity=0.44)
+                                    fill='yellow',
+                                    opacity=0.44,
+                                    stroke="green",
+                                    stroke_width=0.3)
         h.rotate(self.heading,
                  center=(50, 50))
         dwg.add(dh)
