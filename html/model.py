@@ -21,7 +21,8 @@ class Bike(Document):
                 'point': self.point,
                 'speed': self.speed,
                 'heading': self.heading,
-                'destination_heading': self.destination_heading,
+                'destination_heading': float("%0.2f" %
+                                             self.destination_heading),
                 'destination': self.destination,
                 'stamp': str(self.stamp)}
 
@@ -59,7 +60,7 @@ class Bike(Document):
         self.stamp = datetime.now()
         self.point = new_point
 
-    def marker(self, color='red'):
+    def marker(self):
         dwg = svgwrite.Drawing()
         dwg.viewbox(width=100, height=100)
         dh = svgwrite.shapes.Polygon(points=[[50, 20],
@@ -75,7 +76,8 @@ class Bike(Document):
                                     fill='yellow',
                                     opacity=0.44,
                                     stroke="green",
-                                    stroke_width=0.3)
+                                    stroke_width=1,
+                                    stroke_opacity=1)
         h.rotate(self.heading,
                  center=(50, 50))
         dwg.add(dh)

@@ -17,8 +17,8 @@ model.connect('mydb')
 env = Environment(loader=FileSystemLoader('templates'))
 
 
-@app.route('/bike/<destination_heading>/<bike_id>_marker.svg')
-def bike_marker(destination_heading, bike_id):
+@app.route('/bike/<bike_id>/<destination_heading>_marker.svg')
+def bike_marker(bike_id, destination_heading):
     b = model.Bike.objects.with_id(bike_id)
     return Response(b.marker(),
                     mimetype="image/svg+xml")

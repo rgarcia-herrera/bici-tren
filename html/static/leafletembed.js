@@ -39,7 +39,7 @@ function get_bikes() {
 		      dest_icon = L.icon({
 			  iconUrl: 'http://127.0.0.1:5000/static/finish-line.png',
 			  iconSize: [30, 35],
-			  iconAnchor: [14, 17],
+			  iconAnchor: [14, 34],
 		      });
 
 		      dlong = b["destination"]["coordinates"][0];
@@ -50,8 +50,8 @@ function get_bikes() {
 		      var longitude = b["point"]["coordinates"][0];
 		      var latitude = b["point"]["coordinates"][1];
 		      bikeIcon = L.icon({
-			  iconUrl: 'http://127.0.0.1:5000/bike/' + b['destination_heading'] +
-			      '/' + b['bike_id'] + '_marker.svg',
+			  iconUrl: 'http://127.0.0.1:5000/bike/' + b['bike_id'] +
+			      '/' + b['destination_heading'] + '_marker.svg',
 			  iconSize:     [50, 70],
 			  iconAnchor:   [24, 69]});
 		      bike_marker = new L.Marker([latitude, longitude],
@@ -64,7 +64,7 @@ function get_bikes() {
 		      bike_bg.addTo(markers);
 		      bike_marker.addTo(markers);
 		      markers.addTo(map);
-		      setTimeout(get_bikes, 1500);
+		      //setTimeout(get_bikes, 1500);
 		  }
 	      });
 }
