@@ -64,7 +64,7 @@ function get_bikes() {
 		      bike_bg.addTo(markers);
 		      bike_marker.addTo(markers);
 		      markers.addTo(map);
-		      // setTimeout(update_position, 1000);
+		      setTimeout(get_bikes, 1500);
 		  }
 	      });
 }
