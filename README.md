@@ -33,6 +33,15 @@ Estas instrucciones funcionan en [bunsenlabs](http://bunsenlabs.org/), un deriva
 una [máquina virtual](http://virtualbox.org) para instalar ahí debian,
 y luego seguir estas instrucciones.
 
+0. Dependencias de Debian/Bunsen
+
+Instalar la base de datos y virtualenv para facilitar la gesitón de
+dependencias de python.
+
+```
+$ sudo apt-get install python-virtualenv mongodb
+```
+
 1. Descargar o clonar este repositorio.
 
 ```
