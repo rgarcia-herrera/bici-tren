@@ -38,13 +38,14 @@ y luego seguir estas instrucciones.
 ```
 $ wget https://github.com/rgarcia-herrera/bici-tren/archive/master.zip
 $ unzip master.zip
+$ cd bici-tren
 ```
 
 2. Descargar brouter.
 
 ```
-wget http://brouter.de/brouter_bin/brouter_1_4_9.zip
-unzip brouter_1_4_9.zip
+$ wget http://brouter.de/brouter_bin/brouter_1_4_9.zip
+$ unzip brouter_1_4_9.zip
 ```
 
 3. Descargar tablas de ruteo. Con ese script se bajan *todas*, son 4.5 GB.
@@ -60,7 +61,7 @@ $ ./get_segments.sh
 ```
 $ virtualenv venv
 $ source venv/bin/activate
-(venv) $   # ambiente activado
+(venv) $  ambiente activado
 
 (venv) $ pip install -r requirements.txt
 [...]  # se instalan bibliotecas de python.
