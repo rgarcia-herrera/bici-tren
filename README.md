@@ -54,7 +54,7 @@ y luego seguir estas instrucciones.
 
 5. Arrancar servidores.
 
-	$ ./run_servers.sh
+	$ ./servers.sh
 
 
 
