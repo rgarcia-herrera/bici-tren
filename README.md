@@ -52,13 +52,15 @@ y luego seguir estas instrucciones.
 	(venv) $ pip install -r requirements.txt
 	[...]  # se instalan bibliotecas de python.
 
-5. Arrancar servidores.
+
+## Correr una simulación
+
+1. Arrancar servidores.
 
 	$ ./servers.sh
 
+2. Empezar simulación.
 
-
-## Correr una simulación
 
 	(venv) $ python ride.py -h
 
