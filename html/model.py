@@ -6,6 +6,9 @@ import utm
 from util import swap_coords
 import svgwrite
 from LatLon import LatLon, Latitude, Longitude
+import json
+import urllib2
+from time import sleep
 
 
 class Bike(Document):
@@ -90,3 +93,81 @@ class Bike(Document):
                             point__max_distance=1000,
                             destination__near=self.destination,
                             destination__max_distance=500)
+
+    def flock_with(self, bikes, heading_diff):
+        """
+        bikes will probably be the output of 'near' or 'within_box'.
+
+        If the agent's heading - avg_heading is less than heading_diff
+        then flock to centroid.
+
+        Else abandon flock and head to target.
+        """
+        bikes = Bike.objects(point__near=self.point,
+                             point__max_distance=1000,
+                             destination__near=self.destination,
+                             destination__max_distance=500)
+
+        all_headings = [b.heading for b in bikes]
+
+        flock_heading = sum(all_headings) / len(all_headings)
+
+        # compute centroid
+        centroid = 3
+
+        if self.heading - flock_heading < heading_diff:
+            self.heading = centroid
+
+    def front_spotlight(self, diameter):
+        """
+        Seek other agents with similar heading
+        as mine in a circle in front of me
+        """
+
+        return Bike.objects(point__near=self.point,
+                            point__max_distance=1000,
+                            destination__near=self.destination,
+                            destination__max_distance=500)
+
+    def next_waypoint(self, coords, step):
+        for i in range(1, len(coords)):
+            a = LatLon(Latitude(self.point[1]),
+                       Longitude(self.point[0]))
+            c = LatLon(Latitude(coords[i][1]),
+                       Longitude(coords[i][0]))
+            while a.distance(c) > step:
+                dst = a.offset(a.heading_initial(c), step)
+                yield [dst.lon.decimal_degree,
+                       dst.lat.decimal_degree]
+                a = LatLon(Latitude(self.point[1]),
+                           Longitude(self.point[0]))
+                c = LatLon(Latitude(coords[i][1]),
+                           Longitude(coords[i][0]))
+
+            print "reached waypoint %s" % c
+            yield [coords[i][0],
+                   coords[i][1]]
+
+    def route_to(self, point):
+
+        """
+        Use local instance of brouter to get route to point
+        """
+        host = "http://localhost:17777"
+        route_url = "http://{host}/brouter?lonlats={source}|{target}" \
+                    + "&profile=trekking&alternativeidx=0&format=geojson"
+
+        route = json.loads(
+            urllib2.urlopen(
+                route_url.format(host=host,
+                                 source=self.point,
+                                 target=point)).read())
+        return route
+
+    def ride_to(self, point):
+        for p in self.next_waypoint(self.route_to(point),
+                                    self.speed / 1000.0):
+            self.update(p)
+            self.save()
+            print self
+            sleep(1)
