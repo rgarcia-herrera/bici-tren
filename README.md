@@ -35,34 +35,41 @@ y luego seguir estas instrucciones.
 
 1. Descargar o clonar este repositorio.
 
-	 $ wget https://github.com/rgarcia-herrera/bici-tren/archive/master.zip
-	 $ unzip master.zip
+```
+$ wget https://github.com/rgarcia-herrera/bici-tren/archive/master.zip
+$ unzip master.zip
+```
 
 2. Descargar brouter.
 
 
 3. Descargar tablas de ruteo.
 
+
 4. Instalar ambiente de Python
 
-	$ virtualenv venv
-	$ source venv/bin/activate
-	(venv) $   # ambiente activado
+```
+$ virtualenv venv
+$ source venv/bin/activate
+(venv) $   # ambiente activado
 
-	(venv) $ pip install -r requirements.txt
-	[...]  # se instalan bibliotecas de python.
+(venv) $ pip install -r requirements.txt
+[...]  # se instalan bibliotecas de python.
+```
 
 
 ## Correr una simulación
 
 1. Arrancar servidores.
 
-	$ ./servers.sh
+```
+$ ./servers.sh
+```
 
 2. Empezar simulación.
 
-
-	(venv) $ python ride.py -h
+```
+(venv) $ python ride.py -h
 
 
 	usage: ride.py [-h] --geojson GEOJSON [--speed SPEED] [--id ID]
@@ -74,3 +81,4 @@ y luego seguir estas instrucciones.
 	  --geojson GEOJSON  A BRouter route in geojson format.
 	  --speed SPEED      speed in meters per second, default=3.0
 	  --id ID            bike id
+```
