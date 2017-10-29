@@ -35,8 +35,8 @@ y luego seguir estas instrucciones.
 
 1. Descargar o clonar este repositorio.
 
-	$ wget https://github.com/rgarcia-herrera/bici-tren/archive/master.zip
-	$ unzip master.zip
+	 $ wget https://github.com/rgarcia-herrera/bici-tren/archive/master.zip
+	 $ unzip master.zip
 
 2. Descargar brouter.
 
@@ -55,6 +55,7 @@ y luego seguir estas instrucciones.
 5. Arrancar servidores.
 
 	$ ./run_servers.sh
+
 
 
 ## Correr una simulación
