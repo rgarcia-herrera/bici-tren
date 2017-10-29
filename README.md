@@ -42,9 +42,18 @@ $ unzip master.zip
 
 2. Descargar brouter.
 
+```
+wget http://brouter.de/brouter_bin/brouter_1_4_9.zip
+unzip brouter_1_4_9.zip
+```
 
-3. Descargar tablas de ruteo.
+3. Descargar tablas de ruteo. Con ese script se bajan *todas*, son 4.5 GB.
 
+```
+$ mkdir -p brouter/segments4
+$ cd brouter/segments4
+$ ./get_segments.sh
+```
 
 4. Instalar ambiente de Python
 
