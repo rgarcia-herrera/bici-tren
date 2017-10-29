@@ -115,7 +115,7 @@ class Bike(Document):
         # compute centroid
         centroid = 3
 
-        if self.heading - flock_heading < heading_diff:
+        if abs(self.heading - flock_heading) < heading_diff:
             self.heading = centroid
 
     def front_spotlight(self, diameter):
@@ -125,18 +125,17 @@ class Bike(Document):
         """
 
         return Bike.objects(point__near=self.point,
-                            point__max_distance=1000,
-                            destination__near=self.destination,
-                            destination__max_distance=500)
+                            point__max_distance=diameter)
 
-    def next_waypoint(self, coords, step):
+    def speed_waypoints(self, coords):
         for i in range(1, len(coords)):
             a = LatLon(Latitude(self.point[1]),
                        Longitude(self.point[0]))
             c = LatLon(Latitude(coords[i][1]),
                        Longitude(coords[i][0]))
-            while a.distance(c) > step:
-                dst = a.offset(a.heading_initial(c), step)
+            while a.distance(c) > self.speed:
+                dst = a.offset(a.heading_initial(c),
+                               self.speed)
                 yield [dst.lon.decimal_degree,
                        dst.lat.decimal_degree]
                 a = LatLon(Latitude(self.point[1]),
@@ -165,9 +164,7 @@ class Bike(Document):
         return route
 
     def ride_to(self, point):
-        for p in self.next_waypoint(self.route_to(point),
-                                    self.speed / 1000.0):
-            self.update(p)
-            self.save()
-            print self
-            sleep(1)
+        p = self.speed_waypoints(self.route_to(point),
+                                 self.speed / 1000.0).next()
+        self.update(p)
+        self.save()
