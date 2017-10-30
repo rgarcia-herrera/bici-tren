@@ -8,7 +8,19 @@ import svgwrite
 from LatLon import LatLon, Latitude, Longitude
 import json
 import urllib2
-from time import sleep
+
+
+class Flock:
+
+    def __init__(self, bikes):
+        lats = list()
+        lons = list()
+        for b in bikes:
+            lats.append(b.point[0])
+            lons.append(b.point[1])
+
+        self.centroid = (sum(lats) / float(len(lats)),
+                         sum(lons) / float(len(lons)))
 
 
 class Bike(Document):
@@ -18,12 +30,14 @@ class Bike(Document):
     destination_heading = FloatField(default=0)
     destination = PointField(required=False)
     stamp = DateTimeField(default=datetime.now)
+    route = LineStringField()
 
     def to_dict(self):
         return {'bike_id': "%s" % self.id,
                 'point': self.point,
                 'speed': self.speed,
-                'heading': self.heading,
+                'heading': float("%0.2f" %
+                                 self.heading),
                 'destination_heading': float("%0.2f" %
                                              self.destination_heading),
                 'destination': self.destination,
@@ -63,6 +77,15 @@ class Bike(Document):
         self.stamp = datetime.now()
         self.point = new_point
 
+    def heading_to(self, other_point):
+        a = LatLon(Longitude(self.point[1]),
+                   Latitude(self.point[0]))
+
+        b = LatLon(Longitude(other_point[1]),
+                   Latitude(other_point[0]))
+
+        return a.heading_initial(b)
+
     def marker(self):
         dwg = svgwrite.Drawing()
         dwg.viewbox(width=100, height=100)
@@ -88,11 +111,19 @@ class Bike(Document):
 
         return dwg.tostring()
 
-    def get_near_bikes(self):
+    def get_near_bikes(self, radius):
         return Bike.objects(point__near=self.point,
-                            point__max_distance=1000,
-                            destination__near=self.destination,
-                            destination__max_distance=500)
+                            point__max_distance=radius)  # incluir heading aca?
+
+    def got_there(self):
+        s = LatLon(Latitude(self.point['coordinates'][1]),
+                   Longitude(self.point['coordinates'][0]))
+        t = LatLon(Latitude(self.destination['coordinates'][1]),
+                   Longitude(self.destination['coordinates'][0]))
+        if s.distance(t) < self.speed:
+            return True
+        else:
+            return False
 
     def flock_with(self, bikes, heading_diff):
         """
@@ -103,25 +134,17 @@ class Bike(Document):
 
         Else abandon flock and head to target.
         """
-        bikes = Bike.objects(point__near=self.point,
-                             point__max_distance=1000,
-                             destination__near=self.destination,
-                             destination__max_distance=500)
-
-        all_headings = [b.heading for b in bikes]
-
-        flock_heading = sum(all_headings) / len(all_headings)
-
         # compute centroid
-        centroid = 3
+        flock = Flock(bikes)
 
-        if abs(self.heading - flock_heading) < heading_diff:
-            self.heading = centroid
+        self.heading = flock.centroid
 
     def front_spotlight(self, diameter):
         """
         Seek other agents with similar heading
-        as mine in a circle in front of me
+        as mine in a circle in front of me.
+
+        Not implemented yet.
         """
 
         return Bike.objects(point__near=self.point,
@@ -133,7 +156,8 @@ class Bike(Document):
                        Longitude(self.point[0]))
             c = LatLon(Latitude(coords[i][1]),
                        Longitude(coords[i][0]))
-            while a.distance(c) > self.speed:
+            # distance is in km, speed in m/s
+            while a.distance(c) > self.speed / 1000.0:
                 dst = a.offset(a.heading_initial(c),
                                self.speed)
                 yield [dst.lon.decimal_degree,
@@ -147,7 +171,7 @@ class Bike(Document):
             yield [coords[i][0],
                    coords[i][1]]
 
-    def route_to(self, point):
+    def update_route(self, point):
 
         """
         Use local instance of brouter to get route to point
@@ -161,10 +185,8 @@ class Bike(Document):
                 route_url.format(host=host,
                                  source=self.point,
                                  target=point)).read())
-        return route
+        self.route = route
 
-    def ride_to(self, point):
-        p = self.speed_waypoints(self.route_to(point),
-                                 self.speed / 1000.0).next()
+    def step(self):
+        p = self.speed_waypoints(self.route).next()
         self.update(p)
-        self.save()
