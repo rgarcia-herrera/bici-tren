@@ -25,10 +25,11 @@ for n in range(60):
     b = model.Bike()
     b.point = random_within_box()   # random start
     b.destination = random_within_box()  # random end
-    b.speed = random.uniform(2, 3.5)
+    b.update_route(b.destination)
     b.update(b.point)
+    b.speed = random.uniform(2, 3.5)
     b.save()
-
+    print b
 
 while model.Bike.objects.count() > 0:
     for b in model.Bike.objects.all():

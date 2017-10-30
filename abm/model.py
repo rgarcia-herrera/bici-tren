@@ -150,12 +150,12 @@ class Bike(Document):
         return Bike.objects(point__near=self.point,
                             point__max_distance=diameter)
 
-    def speed_waypoints(self, coords):
-        for i in range(1, len(coords)):
+    def speed_waypoints(self):
+        for i in range(1, len(self.route)):
             a = LatLon(Latitude(self.point[1]),
                        Longitude(self.point[0]))
-            c = LatLon(Latitude(coords[i][1]),
-                       Longitude(coords[i][0]))
+            c = LatLon(Latitude(self.route[i][1]),
+                       Longitude(self.route[i][0]))
             # distance is in km, speed in m/s
             while a.distance(c) > self.speed / 1000.0:
                 dst = a.offset(a.heading_initial(c),
@@ -164,29 +164,35 @@ class Bike(Document):
                        dst.lat.decimal_degree]
                 a = LatLon(Latitude(self.point[1]),
                            Longitude(self.point[0]))
-                c = LatLon(Latitude(coords[i][1]),
-                           Longitude(coords[i][0]))
+                c = LatLon(Latitude(self.route[i][1]),
+                           Longitude(self.route[i][0]))
 
             print "reached waypoint %s" % c
-            yield [coords[i][0],
-                   coords[i][1]]
+            yield [self.route[i][0],
+                   self.route[i][1]]
 
     def update_route(self, point):
 
         """
         Use local instance of brouter to get route to point
         """
-        host = "http://localhost:17777"
+        host = "localhost:17777"
         route_url = "http://{host}/brouter?lonlats={source}|{target}" \
                     + "&profile=trekking&alternativeidx=0&format=geojson"
+        print route_url.format(host=host,
+                               source=",".join([str(x) for x in self.point]),
+                               target=",".join([str(x) for x in point]))
 
         route = json.loads(
             urllib2.urlopen(
                 route_url.format(host=host,
-                                 source=self.point,
-                                 target=point)).read())
-        self.route = route
+                                 source=",".join([str(x) for x in self.point]),
+                                 target=",".join([str(x) for x in point]))
+            ).read())
+
+        self.route = [(c[0], c[1])
+                      for c in route['features'][0]['geometry']['coordinates']]
 
     def step(self):
-        p = self.speed_waypoints(self.route).next()
+        p = self.speed_waypoints().next()
         self.update(p)
