@@ -76,16 +76,18 @@ class Bike(Document):
             c = LatLon(Longitude(self.destination[1]),
                        Latitude(self.destination[0]))
 
+        # print a, b, c
         self.heading = a.heading_initial(b)
         self.destination_heading = b.heading_initial(c)
 
         tdelta = datetime.now() - self.stamp
         seconds = tdelta.total_seconds()
         distance = a.distance(b) / 1000.0
-        self.speed = distance / seconds
+        # self.speed = distance / seconds
 
         self.stamp = datetime.now()
         self.point = new_point
+        self.save()
 
     def heading_to(self, other_point):
         a = LatLon(Longitude(self.point['coordinates'][1]),
