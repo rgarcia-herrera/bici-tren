@@ -45,7 +45,7 @@ class Bike(Document):
                 'stamp': str(self.stamp)}
 
     def __str__(self):
-        return "<bike %s %s @%sm/s>" % (self.id, self.point, self.speed)
+        return "<bike %s %s away @%sm/s>" % (self.id, self.distance_to(self.destination), self.speed)
 
     def get_point_xy(self):
         return utm.from_latlon(*swap_coords(self.point))
@@ -96,6 +96,26 @@ class Bike(Document):
 
         return a.heading_initial(b)
 
+    def distance_to(self, other_point):
+        """
+        distance from bike to another point, in metres
+        """
+        if 'coordinates' in self.point:
+            s = LatLon(Latitude(self.point['coordinates'][1]),
+                       Longitude(self.point['coordinates'][0]))
+        else:
+            s = LatLon(Latitude(self.point[1]),
+                       Longitude(self.point[0]))
+
+        if 'coordinates' in other_point:
+            t = LatLon(Latitude(other_point['coordinates'][1]),
+                       Longitude(other_point['coordinates'][0]))
+        else:
+            t = LatLon(Latitude(other_point[1]),
+                       Longitude(other_point[0]))
+
+        return s.distance(t) * 1000.0
+
     def marker(self):
         dwg = svgwrite.Drawing()
         dwg.viewbox(width=100, height=100)
@@ -126,11 +146,7 @@ class Bike(Document):
                             point__max_distance=radius)  # incluir heading aca?
 
     def got_there(self):
-        s = LatLon(Latitude(self.point['coordinates'][1]),
-                   Longitude(self.point['coordinates'][0]))
-        t = LatLon(Latitude(self.destination['coordinates'][1]),
-                   Longitude(self.destination['coordinates'][0]))
-        if s.distance(t) < self.speed:
+        if self.distance_to(self.destination) < self.speed:
             return True
         else:
             return False
