@@ -5,14 +5,6 @@ import model
 import random
 
 
-def random_within_box(sw_lat=19.37625563272936,
-                      ne_lat=19.48957309227922,
-                      ne_lng=-99.04912948608398,
-                      sw_lng=-99.22079086303712):
-    return (random.uniform(sw_lng, ne_lng),
-            random.uniform(ne_lat, sw_lat))
-
-
 model.connect('mydb')
 
 # drop all bikes
@@ -21,28 +13,32 @@ for b in model.Bike.objects.all():
 
 h = 0.0
 # init source, target, speed for this many bikes
-for n in range(60):
+for n in range(2):
     b = model.Bike()
-    b.point = random_within_box()   # random start
-    b.destination = random_within_box()  # random end
-    b.update_route(b.destination)
-    b.update(b.point)
-    b.speed = random.uniform(2, 3.5)
+    b.random_ride(sw_lat=19.37625563272936,
+                  ne_lat=19.48957309227922,
+                  ne_lng=-99.04912948608398,
+                  sw_lng=-99.22079086303712)
     b.save()
-    print b
+    sleep(1)
+    print "creando %s" % b
 
 while model.Bike.objects.count() > 0:
     for b in model.Bike.objects.all():
-        sleep(0.05)
-        print b
         if b.got_there():
             b.delete()
             break
+        else:
+            print "not there yet"
 
         delta = datetime.now() - b.stamp
         if delta.seconds > 10:
-            flock = model.Flock(b.get_near_bikes())
+            if b.get_near_bikes(10000).count() > 1:
+                flock = model.Flock(b.get_near_bikes(1000))
 
-            if abs(b.heading - b.heading_to(flock.centroid)) < 0.8:
-                b.update_route(flock.centroid)
+                if abs(b.heading - b.heading_to(flock.centroid)) < 0.8:
+                    b.update_route(flock.centroid)
+
         b.step()
+        print b
+        sleep(0.5)
