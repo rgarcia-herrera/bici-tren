@@ -1,65 +1,8 @@
+from mongoengine import connect  # must import connect, used from without
+from agent import Agent
 from LatLon import LatLon, Latitude, Longitude
 import random
-
-
-
-
-
-
-
-
-    def random_ride(self, ne_lng, ne_lat, sw_lng, sw_lat):
-
-        while True:
-
-            a = LatLon(Latitude(random.uniform(ne_lat, sw_lat)),
-                       Longitude(random.uniform(sw_lng, ne_lng)))
-            c = LatLon(Latitude(random.uniform(ne_lat, sw_lat)),
-                       Longitude(random.uniform(sw_lng, ne_lng)))
-
-            # distance is in km, speed in m/s
-            if a.distance(c) > 2:
-                break
-
-        self.speed = random.uniform(2, 3.5)
-        self.point = (a.lon.decimal_degree,
-                      a.lat.decimal_degree)
-        self.destination = (c.lon.decimal_degree,
-                            c.lat.decimal_degree)
-        self.save()
-        self.update_route(self.destination)
-
-
-
-
-    def flock_with(self, bikes, heading_diff):
-        """
-        bikes will probably be the output of 'near' or 'within_box'.
-
-        If the agent's heading - avg_heading is less than heading_diff
-        then flock to centroid.
-
-        Else abandon flock and head to target.
-
-        Not implemented yet.
-        """
-        # compute centroid
-        flock = Flock(bikes)
-
-        # self.heading = flock.centroid
-
-    def front_spotlight(self, diameter):
-        """
-        Seek other agents with similar heading
-        as mine in a circle in front of me.
-
-        Not implemented yet.
-        """
-
-        return Bike.objects(point__near=self.point,
-                            point__max_distance=diameter)
-
-
+from router import Router
 
 
 class Flock:
@@ -77,3 +20,57 @@ class Flock:
 
         self.centroid = (sum(lats) / float(len(lats)),
                          sum(lons) / float(len(lons)))
+
+
+class Bike(Agent):
+
+    def random_ride(self, ne_lng, ne_lat, sw_lng, sw_lat,
+                    min_len=2):
+        """
+        params are bounding box and minimum length in kilometres
+        """
+        while True:
+
+            a = LatLon(Latitude(random.uniform(ne_lat, sw_lat)),
+                       Longitude(random.uniform(sw_lng, ne_lng)))
+            c = LatLon(Latitude(random.uniform(ne_lat, sw_lat)),
+                       Longitude(random.uniform(sw_lng, ne_lng)))
+
+            if a.distance(c) >= min_len:
+                break
+
+        self.point = (a.lon.decimal_degree,
+                      a.lat.decimal_degree)
+        self.destination = (c.lon.decimal_degree,
+                            c.lat.decimal_degree)
+        router = Router(source=self.point,
+                        target=self.destination)
+        self.route = router.route
+        self.save()
+
+    # def flock_with(self, bikes, heading_diff):
+    #     """
+    #     bikes will probably be the output of 'near' or 'within_box'.
+
+    #     If the agent's heading - avg_heading is less than heading_diff
+    #     then flock to centroid.
+
+    #     Else abandon flock and head to target.
+
+    #     Not implemented yet.
+    #     """
+    #     # compute centroid
+    #     flock = Flock(bikes)
+
+    #     # self.heading = flock.centroid
+
+    # def front_spotlight(self, diameter):
+    #     """
+    #     Seek other agents with similar heading
+    #     as mine in a circle in front of me.
+
+    #     Not implemented yet.
+    #     """
+
+    #     return Bike.objects(point__near=self.point,
+    #                         point__max_distance=diameter)

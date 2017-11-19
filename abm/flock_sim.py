@@ -1,9 +1,6 @@
 from time import sleep
 from datetime import datetime
-import model
-# from LatLon import LatLon, Latitude, Longitude
-import random
-
+import bike_agent as model
 
 model.connect('mydb')
 
@@ -19,9 +16,8 @@ for n in range(1):
                   ne_lat=19.48957309227922,
                   ne_lng=-99.04912948608398,
                   sw_lng=-99.22079086303712)
-    b.save()
     sleep(1)
-    print "creando %s" % b
+    print "creada %s" % b
 
 while model.Bike.objects.count() > 0:
     for b in model.Bike.objects.all():
