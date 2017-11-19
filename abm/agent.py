@@ -14,6 +14,7 @@ class Agent(Document):
     route = LineStringField()
     # route_flock = LineStringField()
     # status = StringField()
+    meta = {'allow_inheritance': True}
 
     def to_dict(self):
         return {'agent_id': "%s" % self.id,
@@ -27,7 +28,7 @@ class Agent(Document):
                 'stamp': str(self.stamp)}
 
     def __str__(self):
-        return "<agent %s %s away @%sm/s>" % (self.id,
+        return "<agent %s %0.2fm away @%sm/s>" % (self.id,
                                               self.distance_to(
                                                   self.destination),
                                               self.speed)

@@ -43,8 +43,8 @@ class Bike(Agent):
                       a.lat.decimal_degree)
         self.destination = (c.lon.decimal_degree,
                             c.lat.decimal_degree)
-        router = Router(source=self.point,
-                        target=self.destination)
+        router = Router(points=[self.point,
+                                self.destination])
         self.route = router.route
         self.save()
 

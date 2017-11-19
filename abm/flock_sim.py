@@ -1,5 +1,5 @@
 from time import sleep
-from datetime import datetime
+# from datetime import datetime
 import bike_agent as model
 
 model.connect('mydb')
@@ -12,6 +12,7 @@ h = 0.0
 # init source, target, speed for this many bikes
 for n in range(1):
     b = model.Bike()
+    b.speed = 3
     b.random_ride(sw_lat=19.37625563272936,
                   ne_lat=19.48957309227922,
                   ne_lng=-99.04912948608398,
@@ -21,16 +22,14 @@ for n in range(1):
 
 while model.Bike.objects.count() > 0:
     for b in model.Bike.objects.all():
-        delta = datetime.now() - b.stamp
-        if delta.seconds > 10:
-            if b.get_near_bikes(10000).count() > 1:
-                flock = model.Flock(b.get_near_bikes(1000))
-
-                if abs(b.heading - b.heading_to(flock.centroid)) < 0.8:
-                    b.update_route(flock.centroid)
-                    b.status = 'flocking'
-
         b.step()
+        # if b.get_near_bikes(10000).count() > 1:
+        #     flock = model.Flock(b.get_near_bikes(1000))
+
+        #     if abs(b.heading - b.heading_to(flock.centroid)) < 0.8:
+        #         b.update_route(flock.centroid)
+        #         b.status = 'flocking'
+
         print b
 
         if b.got_there():

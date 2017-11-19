@@ -47,7 +47,7 @@ def refine(route, speed):
     return fine
 
 
-def route_from_geojson(self, geojson):
+def route_from_geojson(geojson):
     """
     returns just the coordinates list
     """
@@ -91,20 +91,13 @@ class Router:
                               p]))
         lonlats = "|".join(P)
 
-        route_url = "{server}" + \
-                    + "/brouter?lonlats={source}|{target}" \
+        route_url = "{server}" \
+                    + "/brouter?lonlats={lonlats}" \
                     + "&profile=trekking&alternativeidx=0&format=geojson"
 
         route_url = route_url.format(
             server=self.server,
-            lonlats=lonlats,
-            source=",".join([str(x)
-                             for x in
-                             self.source]),
-            target=",".join([str(x)
-                             for x in
-                             self.target]))
-
+            lonlats=lonlats)
         response = urllib2.urlopen(route_url)
         broute_json = response.read()
         self.route = route_from_geojson(broute_json)
