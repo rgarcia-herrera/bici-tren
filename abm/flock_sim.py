@@ -13,7 +13,7 @@ for b in model.Bike.objects.all():
 
 h = 0.0
 # init source, target, speed for this many bikes
-for n in range(2):
+for n in range(1):
     b = model.Bike()
     b.random_ride(sw_lat=19.37625563272936,
                   ne_lat=19.48957309227922,
@@ -25,12 +25,6 @@ for n in range(2):
 
 while model.Bike.objects.count() > 0:
     for b in model.Bike.objects.all():
-        if b.got_there():
-            b.delete()
-            break
-        else:
-            print "not there yet"
-
         delta = datetime.now() - b.stamp
         if delta.seconds > 10:
             if b.get_near_bikes(10000).count() > 1:
@@ -38,7 +32,12 @@ while model.Bike.objects.count() > 0:
 
                 if abs(b.heading - b.heading_to(flock.centroid)) < 0.8:
                     b.update_route(flock.centroid)
+                    b.status = 'flocking'
 
         b.step()
         print b
+
+        if b.got_there():
+            b.delete()
+
         sleep(0.5)
