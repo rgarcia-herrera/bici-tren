@@ -18,7 +18,7 @@ class Agent(Document):
     # status = StringField()
 
     def to_dict(self):
-        return {'bike_id': "%s" % self.id,
+        return {'agent_id': "%s" % self.id,
                 'point': self.point,
                 'speed': self.speed,
                 'heading': float("%0.2f" %
@@ -29,7 +29,7 @@ class Agent(Document):
                 'stamp': str(self.stamp)}
 
     def __str__(self):
-        return "<bike %s %s away @%sm/s>" % (self.id,
+        return "<agent %s %s away @%sm/s>" % (self.id,
                                              self.distance_to(
                                                  self.destination),
                                              self.speed)
@@ -81,7 +81,7 @@ class Agent(Document):
 
     def distance_to(self, other_point):
         """
-        distance from bike to another point, in metres
+        distance from agent to another point, in metres
         """
         if 'coordinates' in self.point:
             s = LatLon(Latitude(self.point['coordinates'][1]),
@@ -124,9 +124,9 @@ class Agent(Document):
 
         return dwg.tostring()
 
-    def get_near_bikes(self, radius):
-        return Bike.objects(point__near=self.point,
-                            point__max_distance=radius)  # incluir heading aca?
+    def get_near_agents(self, radius):
+        return Agent.objects(point__near=self.point,
+                             point__max_distance=radius)  # incluir heading?
 
     def got_there(self):
         if self.distance_to(self.destination) < self.speed:
