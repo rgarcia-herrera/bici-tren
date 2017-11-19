@@ -1,6 +1,6 @@
 from mongoengine import Document, FloatField, \
     DateTimeField, PointField, LineStringField, \
-    connect  # must import connect, used from without
+    StringField, connect  # must import connect, used from without
 from datetime import datetime
 import utm
 from util import swap_coords
@@ -9,6 +9,47 @@ from LatLon import LatLon, Latitude, Longitude
 import json
 import urllib2
 import random
+
+
+def split(s, t, speed):
+    """
+    returns points between s(ource) and t(arget) at intervals of size @speed
+    """
+    s = LatLon(Latitude(s[1]),
+               Longitude(s[0]))
+
+    t = LatLon(Latitude(t[1]),
+               Longitude(t[0]))
+
+    heading = s.heading_initial(t)
+
+    fine = [(s.lon.decimal_degree,
+             s.lat.decimal_degree), ]
+    wp = s
+
+    while True:
+        dst = wp.offset(heading,
+                        speed / 1000.0)
+
+        if dst.distance(t) * 1000.0 > speed:
+            fine.append((dst.lon.decimal_degree,
+                         dst.lat.decimal_degree))
+            wp = dst
+        else:
+            fine.append((t.lon.decimal_degree,
+                         t.lat.decimal_degree))
+            break
+
+    return fine
+
+
+def refine(route, speed):
+    assert len(route) > 1
+    fine = [route[0], ]
+    for i in range(len(route)-1):
+        fine += split(route[i], route[i + 1], speed)[1:-1]
+    fine.append(route[-1])
+    return fine
 
 
 class Flock:
@@ -32,6 +73,13 @@ class Bike(Document):
     destination = PointField(required=False)
     stamp = DateTimeField(default=datetime.now)
     route = LineStringField()
+    # route_flock = LineStringField()
+
+    # status = StringField()
+
+    def point_as_LatLon(self):
+        return LatLon(Longitude(self.point['coordinates'][1]),
+                      Latitude(self.point['coordinates'][0]))
 
     def to_dict(self):
         return {'bike_id': "%s" % self.id,
@@ -76,18 +124,18 @@ class Bike(Document):
             c = LatLon(Longitude(self.destination[1]),
                        Latitude(self.destination[0]))
 
-        # print a, b, c
         self.heading = a.heading_initial(b)
         self.destination_heading = b.heading_initial(c)
 
-        tdelta = datetime.now() - self.stamp
-        seconds = tdelta.total_seconds()
-        distance = a.distance(b) / 1000.0
+        # tdelta = datetime.now() - self.stamp
+        # seconds = tdelta.total_seconds()
+        # distance = a.distance(b) / 1000.0
         # self.speed = distance / seconds
 
         self.stamp = datetime.now()
         self.point = new_point
         self.save()
+        self.reload()
 
     def heading_to(self, other_point):
         a = LatLon(Longitude(self.point['coordinates'][1]),
@@ -178,47 +226,63 @@ class Bike(Document):
         return Bike.objects(point__near=self.point,
                             point__max_distance=diameter)
 
-    def speed_waypoints(self):
+    def speed_waypoints(self, route):
 
-        for i in range(1, len(self.route)):
-            a = LatLon(Latitude(self.point['coordinates'][1]),
-                       Longitude(self.point['coordinates'][0]))
-
-            c = LatLon(Latitude(self.route['coordinates'][i][1]),
-                       Longitude(self.route['coordinates'][i][0]))
-            # distance is in km, speed in m/s
-            while a.distance(c) > self.speed / 1000.0:
-                dst = a.offset(a.heading_initial(c),
-                               self.speed)
-                yield [dst.lon.decimal_degree,
-                       dst.lat.decimal_degree]
+        for i in range(1, len(route['coordinates'])):
+            while True:
                 a = LatLon(Latitude(self.point['coordinates'][1]),
                            Longitude(self.point['coordinates'][0]))
-                c = LatLon(Latitude(self.route['coordinates'][i][1]),
-                           Longitude(self.route['coordinates'][i][0]))
+                c = LatLon(Latitude(route['coordinates'][i][1]),
+                           Longitude(route['coordinates'][i][0]))
 
-            print "reached waypoint %s" % c
-            yield [self.route['coordinates'][i][0],
-                   self.route['coordinates'][i][1]]
+                dst = a.offset(a.heading_initial(c),
+                               self.speed)
+
+                # distance is in km, speed in m/s
+                if a.distance(c) * 1000.0 - self.speed * 2 > 30:
+#                    print "faltan %s m" % float(a.distance(c)) * 1000
+                    yield [dst.lon.decimal_degree,
+                           dst.lat.decimal_degree]
+                else:
+                    print "reached waypoint %s" % c
+                    yield [route['coordinates'][i][0],
+                           route['coordinates'][i][1]]
+                    break
+
+    def towards(self, point_b):
+
+        a = self.point_as_LatLon()
+        b = LatLon(Latitude(point_b[1]),
+                   Longitude(point_b[0]))
+
+        dst = a.offset(a.heading_initial(b),
+                       self.speed)
+
+        # distance is in km, speed in m/s
+        if (a.distance(b) * 1000.0) - (self.speed * 2) > 30:
+            #                    print "faltan %s m" % float(a.distance(c)) * 1000
+            return [dst.lon.decimal_degree,
+                    dst.lat.decimal_degree], False
+        else:
+            print "reached point b"
+            return point_b, True
 
     def update_route(self, point):
-
         """
         Use local instance of brouter to get route to point
         """
+        self.reload()
         host = "localhost:17777"
         route_url = "http://{host}/brouter?lonlats={source}|{target}" \
                     + "&profile=trekking&alternativeidx=0&format=geojson"
-        # print route_url.format(host=host,
-        #                        source=",".join([str(x) for x in self.point]),
-        #                        target=",".join([str(x) for x in point]))
-        if 'coordinates' in self.point:
-            source = self.point['coordinates']
+
+        source = self.point['coordinates']
+
+        if 'coordinates' in point:
+            target = point['coordinates']
         else:
-            source = self.point
+            target = point
 
-
-#        try:
         response = urllib2.urlopen(
                 route_url.format(
                     host=host,
@@ -226,10 +290,8 @@ class Bike(Document):
                                      for x in
                                      source]),
                     target=",".join([str(x)
-                                     for x in point])))
+                                     for x in target])))
         broute_json = response.read()
-#            except:
-#                print "bronca obteniendo ruta"
 
         try:
             self.set_route_from_geojson(broute_json)
@@ -245,11 +307,13 @@ class Bike(Document):
 
     def step(self):
         self.reload()
-        try:
-            p = self.speed_waypoints().next()
+        p, got_there = self.towards(self.route['coordinates'][0])
+        if not got_there:
+            print "hacia el primer punto"
             self.update(p)
-        except StopIteration:
-            pass
+        else:
+            print "actualizar ruta"
+            self.update_route(self.destination)
 
     def random_ride(self, ne_lng, ne_lat, sw_lng, sw_lat):
 
@@ -269,5 +333,5 @@ class Bike(Document):
                       a.lat.decimal_degree)
         self.destination = (c.lon.decimal_degree,
                             c.lat.decimal_degree)
-
+        self.save()
         self.update_route(self.destination)
