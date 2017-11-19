@@ -64,19 +64,16 @@ def route_from_geojson(self, geojson):
 class Router:
     """
     intended use:
-        router = Router(source=(-99.1655, 19.342),
-                        target=(-99.1611, 19.340))
+        router = Router(points=[(-99.1655, 19.342),
+                                (-99.1611, 19.340)])
         coarse_route = router.route
         fine_route = router.get_refined_route(speed=10)  # speed in m/s
         finer_route = router.get_refined_route(speed=3)  # speed in m/s
     """
 
-    def __init__(self, source, target,
+    def __init__(self, points,
                  protocol='http', host='localhost', port=17777):
-
-        self.source = source
-        self.target = target
-
+        self.points = points
         self.server = "{protocol}://{host}:{port}".format(
             protocol=protocol,
             host=host,
@@ -87,12 +84,20 @@ class Router:
         """
         Use brouter server to get route
         """
+        P = []
+        for p in self.points:
+            P.append(",".join([str(x)
+                              for x in
+                              p]))
+        lonlats = "|".join(P)
+
         route_url = "{server}" + \
                     + "/brouter?lonlats={source}|{target}" \
                     + "&profile=trekking&alternativeidx=0&format=geojson"
 
         route_url = route_url.format(
             server=self.server,
+            lonlats=lonlats,
             source=",".join([str(x)
                              for x in
                              self.source]),
