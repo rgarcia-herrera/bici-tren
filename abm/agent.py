@@ -129,10 +129,14 @@ class Agent(Document):
         move to next point in route
         """
         self.reload()
-        coordinates = self.route['coordinates'][:]
+        if self.route is not None:
+            coordinates = self.route['coordinates'][:]
 
-        p = coordinates.pop(0)
+            p = coordinates.pop(0)
 
-        self.route = coordinates
+            if len(p) > 1:
+                self.route = coordinates
+            else:
+                self.route = None
 
-        self.update(p)
+            self.update(p)
