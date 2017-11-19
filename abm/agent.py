@@ -1,8 +1,6 @@
 from mongoengine import Document, FloatField, \
-    DateTimeField, PointField, LineStringField, \
-    connect  # must import connect, used from without
+    DateTimeField, PointField, LineStringField
 from datetime import datetime
-import svgwrite
 from LatLon import LatLon, Latitude, Longitude
 
 
@@ -98,31 +96,6 @@ class Agent(Document):
                        Longitude(other_point[0]))
 
         return s.distance(t) * 1000.0
-
-    def marker(self):
-        dwg = svgwrite.Drawing()
-        dwg.viewbox(width=100, height=100)
-        dh = svgwrite.shapes.Polygon(points=[[50, 20],
-                                             [30, 80],
-                                             [70, 80]],
-                                     fill='blue', opacity=0.6)
-        dh.rotate(self.destination_heading,
-                  center=(50, 50))
-
-        h = svgwrite.shapes.Polygon(points=[[50, 30],
-                                            [35, 75],
-                                            [65, 75]],
-                                    fill='yellow',
-                                    opacity=0.44,
-                                    stroke="green",
-                                    stroke_width=1,
-                                    stroke_opacity=1)
-        h.rotate(self.heading,
-                 center=(50, 50))
-        dwg.add(dh)
-        dwg.add(h)
-
-        return dwg.tostring()
 
     def get_near_agents(self, radius):
         return Agent.objects(point__near=self.point,

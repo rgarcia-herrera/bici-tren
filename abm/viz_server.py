@@ -2,6 +2,7 @@ from jinja2 import Environment, FileSystemLoader
 from flask import Flask, send_from_directory
 from flask import jsonify, Response, request
 from flask_cors import CORS
+import svgwrite
 
 import model
 
@@ -48,3 +49,33 @@ def bikes_in():
 @app.route('/static/<path:path>')
 def send(path):
     return send_from_directory('static', path)
+
+
+def marker(headings):
+    """
+    returns svg with nice arrows
+    TODO: not implemented
+    """
+    dwg = svgwrite.Drawing()
+    dwg.viewbox(width=100, height=100)
+    dh = svgwrite.shapes.Polygon(points=[[50, 20],
+                                         [30, 80],
+                                         [70, 80]],
+                                 fill='blue', opacity=0.6)
+    dh.rotate(self.destination_heading,
+    center=(50, 50))
+
+    h = svgwrite.shapes.Polygon(points=[[50, 30],
+                                        [35, 75],
+                                        [65, 75]],
+                                fill='yellow',
+                                opacity=0.44,
+                                stroke="green",
+                                stroke_width=1,
+                                stroke_opacity=1)
+    h.rotate(self.heading,
+             center=(50, 50))
+    dwg.add(dh)
+    dwg.add(h)
+
+    return dwg.tostring()
