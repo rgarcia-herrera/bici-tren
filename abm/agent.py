@@ -28,15 +28,25 @@ class Agent(Document):
 
     def __str__(self):
         return "<agent %s %s away @%sm/s>" % (self.id,
-                                             self.distance_to(
-                                                 self.destination),
-                                             self.speed)
+                                              self.distance_to(
+                                                  self.destination),
+                                              self.speed)
 
     def get_point_LatLon(self):
         return LatLon(Longitude(self.point['coordinates'][1]),
                       Latitude(self.point['coordinates'][0]))
 
-    def update(self, new_point):
+    def update(self, new_point, update_speed=False):
+        """
+        updates time stamp
+
+        uses @new_point to update:
+         - point
+         - heading
+         - destination_heading
+         - speed, if update_speed=True
+
+        """
 
         if 'coordinates' in self.point:
             a = LatLon(Longitude(self.point['coordinates'][1]),
@@ -58,17 +68,20 @@ class Agent(Document):
         self.heading = a.heading_initial(b)
         self.destination_heading = b.heading_initial(c)
 
-        # tdelta = datetime.now() - self.stamp
-        # seconds = tdelta.total_seconds()
-        # distance = a.distance(b) / 1000.0
-        # self.speed = distance / seconds
+        if update_speed:
+            tdelta = datetime.now() - self.stamp
+            seconds = tdelta.total_seconds()
+            distance = a.distance(b) / 1000.0
+            self.speed = distance / seconds
 
         self.stamp = datetime.now()
         self.point = new_point
         self.save()
-        self.reload()
 
     def heading_to(self, other_point):
+        """
+        heading from my point to @other_point
+        """
         a = LatLon(Longitude(self.point['coordinates'][1]),
                    Latitude(self.point['coordinates'][0]))
 
@@ -102,17 +115,23 @@ class Agent(Document):
                              point__max_distance=radius)  # incluir heading?
 
     def got_there(self):
+        """
+        return True if one step or less away
+        """
         if self.distance_to(self.destination) < self.speed:
             return True
         else:
             return False
 
     def step(self):
+        """
+        move to next point in route
+        """
         self.reload()
-        p, got_there = self.towards(self.route['coordinates'][0])
-        if not got_there:
-            print "hacia el primer punto"
-            self.update(p)
-        else:
-            print "actualizar ruta"
-            self.update_route(self.destination)
+        coordinates = self.route['coordinates'][:]
+
+        p = coordinates.pop(0)
+
+        self.route = coordinates
+
+        self.update(p)
