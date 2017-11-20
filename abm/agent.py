@@ -28,7 +28,7 @@ class Agent(Document):
                 'stamp': str(self.stamp)}
 
     def __str__(self):
-        return "<agent %s %0.2fm away @%sm/s>" % (self.id,
+        return "<agent %s %0.2fm away @%sm/s>" % (str(self.id)[-3:],
                                               self.distance_to(
                                                   self.destination),
                                               self.speed)
