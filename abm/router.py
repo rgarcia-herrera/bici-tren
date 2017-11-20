@@ -51,13 +51,11 @@ def route_from_geojson(geojson):
     """
     returns just the coordinates list
     """
-    route = json.loads(geojson)
-
     try:
+        route = json.loads(geojson)
         return [(c[0], c[1])
                 for c in route['features'][0]['geometry']['coordinates']]
     except ValueError:
-        print "bronca leyendo el json", geojson
         return []
 
 
@@ -78,9 +76,9 @@ class Router:
             protocol=protocol,
             host=host,
             port=port)
-        self.request_route()
+        self.update_route()
 
-    def request_route(self):
+    def update_route(self):
         """
         Use brouter server to get route
         """
@@ -98,9 +96,12 @@ class Router:
         route_url = route_url.format(
             server=self.server,
             lonlats=lonlats)
-        response = urllib2.urlopen(route_url)
-        broute_json = response.read()
-        self.route = route_from_geojson(broute_json)
+        try:
+            response = urllib2.urlopen(route_url)
+            broute_json = response.read()
+            self.route = route_from_geojson(broute_json)
+        except:
+            pass
 
     def get_refined_route(self, speed):
         return refine(self.route, speed)
