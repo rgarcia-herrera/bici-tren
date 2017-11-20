@@ -1,5 +1,5 @@
 from mongoengine import Document, FloatField, \
-    DateTimeField, PointField, LineStringField
+    DateTimeField, PointField, LineStringField, StringField
 from datetime import datetime
 from LatLon import LatLon, Latitude, Longitude
 
@@ -13,12 +13,13 @@ class Agent(Document):
     stamp = DateTimeField(default=datetime.now)
     route = LineStringField()
     # route_flock = LineStringField()
-    # status = StringField()
+    status = StringField(default="solo")
     meta = {'allow_inheritance': True}
 
     def to_dict(self):
         return {'agent_id': "%s" % self.id,
                 'point': self.point,
+                'status': self.status,
                 'speed': self.speed,
                 'heading': float("%0.2f" %
                                  self.heading),
@@ -28,10 +29,11 @@ class Agent(Document):
                 'stamp': str(self.stamp)}
 
     def __str__(self):
-        return "<A-%s %0.2fm @%sm/s>" % (str(self.id)[-3:],
-                                         self.distance_to(
-                                             self.destination),
-                                         self.speed)
+        return "<A-%s [%s] %0.2fm @%sm/s>" % (str(self.id)[-3:],
+                                              self.status,
+                                              self.distance_to(
+                                                  self.destination),
+                                              self.speed)
 
     def get_point_LatLon(self):
         return LatLon(Longitude(self.point['coordinates'][1]),
@@ -118,10 +120,6 @@ class Agent(Document):
                        Longitude(other_point[0]))
 
         return s.distance(t) * 1000.0
-
-    def get_near_agents(self, radius):
-        return Agent.objects(point__near=self.point,
-                             point__max_distance=radius)  # incluir heading?
 
     def got_there(self):
         """
