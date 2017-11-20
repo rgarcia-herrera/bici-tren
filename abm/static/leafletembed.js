@@ -10,7 +10,7 @@ function initmap() {
 	var osm = new L.TileLayer(osmUrl, {minZoom: 0, maxZoom: 15, attribution: osmAttrib});
 
     // start the map someplace in Mexico
-    map.setView(new L.LatLng(19.433, -99.135), 15);
+    map.setView(new L.LatLng(19.433, -99.135), 14);
     map.addLayer(osm);
 }
 
@@ -49,11 +49,11 @@ function get_bikes() {
 
 		      var longitude = b["point"]["coordinates"][0];
 		      var latitude = b["point"]["coordinates"][1];
-		      bikeIcon = L.icon({
-			  iconUrl: 'http://127.0.0.1:5000/bike/' + b['bike_id'] +
-			      '/' + b['destination_heading'] + '_marker.svg',
-			  iconSize:     [50, 70],
-			  iconAnchor:   [24, 69]});
+		      // bikeIcon = L.icon({
+		      //	  iconUrl: 'http://127.0.0.1:5000/bike/' + b['bike_id'] +
+		      //	      '/' + b['destination_heading'] + '_marker.svg',
+		      //	  iconSize:     [50, 70],
+		      //	  iconAnchor:   [24, 69]});
 		      bike_marker = new L.Marker([latitude, longitude]);
 		      // {icon: bikeIcon});
 
