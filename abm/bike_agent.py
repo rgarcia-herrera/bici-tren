@@ -38,16 +38,17 @@ class Bike(Agent):
                        Longitude(random.uniform(sw_lng, ne_lng)))
 
             if a.distance(c) >= min_len and a.distance(c) <= max_len:
-                break
+                self.point = (a.lon.decimal_degree,
+                              a.lat.decimal_degree)
+                self.destination = (c.lon.decimal_degree,
+                                    c.lat.decimal_degree)
 
-        self.point = (a.lon.decimal_degree,
-                      a.lat.decimal_degree)
-        self.destination = (c.lon.decimal_degree,
-                            c.lat.decimal_degree)
-        router = Router(points=[self.point,
-                                self.destination])
-        self.route = router.route
-        self.save()
+                router = Router(points=[self.point,
+                                        self.destination])
+                if router.route:
+                    self.route = router.route
+                    self.save()
+                    break
 
     # def flock_with(self, bikes, heading_diff):
     #     """
