@@ -87,8 +87,12 @@ class Agent(Document):
         """
         heading from my point to @other_point
         """
-        a = LatLon(Longitude(self.point['coordinates'][1]),
-                   Latitude(self.point['coordinates'][0]))
+        if 'coordinates' in self.point:
+            a = LatLon(Longitude(self.point['coordinates'][1]),
+                       Latitude(self.point['coordinates'][0]))
+        else:
+            a = LatLon(Longitude(self.point[1]),
+                       Latitude(self.point[0]))
 
         b = LatLon(Longitude(other_point[1]),
                    Latitude(other_point[0]))
