@@ -17,7 +17,8 @@ for n in range(1):
     b.random_ride(sw_lat=19.37625563272936,
                   ne_lat=19.48957309227922,
                   ne_lng=-99.04912948608398,
-                  sw_lng=-99.22079086303712)
+                  sw_lng=-99.22079086303712,
+                  min_len=0.5, max_len=1)
     b.route = refine(b.route, 30)
     b.save()
     sleep(1)

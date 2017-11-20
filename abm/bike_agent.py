@@ -25,10 +25,11 @@ class Flock:
 class Bike(Agent):
 
     def random_ride(self, ne_lng, ne_lat, sw_lng, sw_lat,
-                    min_len=2):
+                    min_len=2, max_len=10):
         """
         params are bounding box and minimum length in kilometres
         """
+        print "seeking random route"
         while True:
 
             a = LatLon(Latitude(random.uniform(ne_lat, sw_lat)),
@@ -36,7 +37,7 @@ class Bike(Agent):
             c = LatLon(Latitude(random.uniform(ne_lat, sw_lat)),
                        Longitude(random.uniform(sw_lng, ne_lng)))
 
-            if a.distance(c) >= min_len:
+            if a.distance(c) >= min_len and a.distance(c) <= max_len:
                 break
 
         self.point = (a.lon.decimal_degree,

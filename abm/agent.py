@@ -56,8 +56,12 @@ class Agent(Document):
             a = LatLon(Longitude(self.point[1]),
                        Latitude(self.point[0]))
 
-        b = LatLon(Longitude(new_point[1]),
-                   Latitude(new_point[0]))
+        if 'coordinates' in new_point:
+            b = LatLon(Longitude(new_point['coordinates'][1]),
+                       Latitude(new_point['coordinates'][0]))
+        else:
+            b = LatLon(Longitude(new_point[1]),
+                       Latitude(new_point[0]))
 
         if 'coordinates' in self.destination:
             c = LatLon(Longitude(self.destination['coordinates'][1]),
@@ -129,14 +133,16 @@ class Agent(Document):
         move to next point in route
         """
         self.reload()
-        if self.route is not None:
+        if self.route is None:
+            self.update(self.destination)
+        else:
             coordinates = self.route['coordinates'][:]
-
-            p = coordinates.pop(0)
-
-            if len(p) > 1:
-                self.route = coordinates
-            else:
+            if len(coordinates) == 2:
+                p = coordinates[0]
                 self.route = None
+            else:
+                p = coordinates.pop(0)
+                self.route = coordinates
 
+            self.save()
             self.update(p)
