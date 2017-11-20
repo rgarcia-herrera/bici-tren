@@ -50,6 +50,12 @@ class Bike(Agent):
                     self.save()
                     break
 
+    def get_flock_candidates(self, rpoint, rdest):
+        return Agent.objects(point__near=self.point,
+                             point__max_distance=rpoint,
+                             destination__near=self.destination,
+                             destination__max_distance=rdest)
+
     # def flock_with(self, bikes, heading_diff):
     #     """
     #     bikes will probably be the output of 'near' or 'within_box'.
