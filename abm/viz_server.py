@@ -4,7 +4,7 @@ from flask import jsonify, Response, request
 from flask_cors import CORS
 import svgwrite
 
-import model
+import bike_agent as model
 
 from pprint import pprint
 
@@ -16,6 +16,12 @@ CORS(app)
 model.connect('mydb')
 
 env = Environment(loader=FileSystemLoader('templates'))
+
+
+@app.route('/map')
+def map():
+    template = env.get_template('map.html')
+    return Response(template.render())
 
 
 @app.route('/bike/<bike_id>/<destination_heading>_marker.svg')
