@@ -96,12 +96,12 @@ class Router:
         route_url = route_url.format(
             server=self.server,
             lonlats=lonlats)
-        try:
-            response = urllib2.urlopen(route_url)
-            broute_json = response.read()
-            self.route = route_from_geojson(broute_json)
-        except:
-            pass
+#        try:
+        response = urllib2.urlopen(route_url)
+        broute_json = response.read()
+        self.route = route_from_geojson(broute_json)
+#        except:
+           # pass
 
     def get_refined_route(self, speed):
         return refine(self.route, speed)
