@@ -11,17 +11,17 @@ for b in model.Bike.objects.all():
 
 h = 0.0
 # init source, target, speed for this many bikes
-for n in range(1):
+for n in range(50):
     b = model.Bike()
     b.speed = 30
-    b.random_ride(sw_lat=19.37625563272936,
-                  ne_lat=19.48957309227922,
-                  ne_lng=-99.04912948608398,
-                  sw_lng=-99.22079086303712,
-                  min_len=0.5, max_len=1)
-    b.route = refine(b.route, 30)
+    b.random_ride(ne_lat=19.450649369224482,
+                  ne_lng=-99.11805152893068,
+                  sw_lat=19.422320621845056,
+                  sw_lng=-99.16096687316896,
+                  min_len=1, max_len=4)
+    b.route = refine(b.route, 15)
     b.save()
-    sleep(1)
+    sleep(0.3)
     print "creada %s" % b
 
 while model.Bike.objects.count() > 0:
@@ -38,4 +38,4 @@ while model.Bike.objects.count() > 0:
         #         b.update_route(flock.centroid)
         #         b.status = 'flocking'
 
-        sleep(0.5)
+    sleep(0.1)
