@@ -54,14 +54,26 @@ function get_bikes() {
 		      //	      '/' + b['destination_heading'] + '_marker.svg',
 		      //	  iconSize:     [50, 70],
 		      //	  iconAnchor:   [24, 69]});
-		      bike_marker = new L.Marker([latitude, longitude]);
-		      // {icon: bikeIcon});
+
+		      if (b["in"]) {
+			  bikeIcon = L.icon({
+			      iconUrl: 'http://127.0.0.1:5000/static/bike_in_flock.png',
+			      iconSize:     [25, 35],
+			      iconAnchor:   [12, 34]});
+		      } else {
+			  bikeIcon = L.icon({
+			      iconUrl: 'http://127.0.0.1:5000/static/bike_solo.png',
+			      iconSize:     [25, 35],
+			      iconAnchor:   [12, 34]});
+		      }
+		      bike_marker = new L.Marker([latitude, longitude],
+						 {icon: bikeIcon});
 
 
-		      bike_bg = new L.Marker([latitude, longitude]);
+		      // bike_bg = new L.Marker([latitude, longitude]);
 
 		      dest_marker.addTo(markers);
-		      bike_bg.addTo(markers);
+		      // bike_bg.addTo(markers);
 		      bike_marker.addTo(markers);
 		      markers.addTo(map);
 		      //setTimeout(get_bikes, 1500);
