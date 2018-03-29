@@ -20,7 +20,7 @@ class Agent(Document):
         return {'agent_id': "%s" % self.id,
                 'point': self.point,
                 'status': self.status,
-                'in': self.in_flock(radius=100),
+                'in': True if self.status == 'flocking' else False,
                 'speed': self.speed,
                 'heading': float("%0.2f" %
                                  self.heading),
@@ -150,9 +150,8 @@ class Agent(Document):
             self.save()
             self.update(p)
 
-    def in_flock(self, radius):
-        if Agent.objects(point__near=self.point,
-                         point__max_distance=radius,
-                         heading__gte=self.heading - 0.15,
-                         heading__lte=self.heading + 0.15).count() > 1:
-            return True
+    def flock(self, radius):
+        return Agent.objects(point__near=self.point,
+                             point__max_distance=radius,
+                             heading__gte=self.heading - 0.15,
+                             heading__lte=self.heading + 0.15)

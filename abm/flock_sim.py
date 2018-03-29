@@ -3,7 +3,7 @@ from time import sleep
 import bike_agent as model
 from router import refine, Router
 import argparse
-
+import random
 
 parser = argparse.ArgumentParser(description='grab adscriptions from medline')
 parser.add_argument('--init', type=int, default=50,
@@ -27,11 +27,12 @@ if args.init > 0:
                       ne_lng=-99.09204483032227,
                       sw_lat=19.40467336236742,
                       sw_lng=-99.17787551879884,
-                      min_len=5, max_len=10)
+                      min_len=8, max_len=10)
 
         b.route = refine(b.route, b.speed)
         b.save()
         sleep(0.1)
+    del(b)
 
 
 def status_count():
@@ -52,40 +53,54 @@ def mean_distance():
                     / model.Bike.objects.count()
 
 
+t = 0
 while model.Bike.objects.count() > 0:
-    for b in model.Bike.objects.all():
+    print t   # , model.Bike.objects(status='flocking').count()
+    t += 1
+    all_bikes = [b for b in model.Bike.objects.all()]
+    random.shuffle(all_bikes)
+
+    for b in all_bikes:
         if b.got_there():
             b.delete()
         else:
             b.step()
             b.reload()
 
-        if b.get_flock_candidates(
-                b.distance_to(b.destination)/2.0,
-                b.distance_to(b.destination)/3.0).count() > 1:
-            flock = model.Flock(
-                b.get_flock_candidates(b.distance_to(b.destination)/2.0,
-                                       b.distance_to(b.destination)/3.0))
+        # route update
+        # if solo seek a flock
+        if b.status == "solo":
+            candidates = [c for c
+                          in b.get_flock_candidates(
+                              b.distance_to(b.destination)/2.0,
+                              b.distance_to(b.destination)/3.0)]
+            if len(candidates) < 2:
+                break   # no flock? continue solo
 
-            if abs(b.heading - b.heading_to(flock.centroid)) < 0.8:
-                if b.status == "solo":
-                    router = Router(points=[b.point['coordinates'],
-                                            flock.centroid,
-                                            b.destination['coordinates']])
+            flock = model.Flock(candidates)
 
-                    b.route = refine(router.route, b.speed)
-                    b.status = 'flocking'
-                    b.speed = 30
-                    b.save()
+            if abs(b.heading - b.heading_to(flock.centroid)) < 0.5:
+                router = Router(
+                    points=[b.point['coordinates'],
+                            flock.centroid,
+                            b.destination['coordinates']])
+
+                b.route = refine(router.route, b.speed)
+                b.status = 'flocking'
+                b.speed = 30
+                b.save()
+
             else:
-                if not b.in_flock(100):
+                # if flocking, check if my heading is too far
+                # from dest_heading
+                if abs(b.heading
+                       - b.heading_to(b.destination['coordinates'])) > 0.8:
                     router = Router(points=[b.point['coordinates'],
                                             b.destination['coordinates']])
                     b.route = refine(router.route, b.speed)
                     b.status = "solo"
                     b.speed = 20
-                else:
-                    b.speed = flock.mean_speed
-                b.save()
 
-    print status_count(), mean_distance()
+                    b.save()
+
+        # print status_count(), mean_distance()
