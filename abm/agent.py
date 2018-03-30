@@ -1,24 +1,42 @@
-from mongoengine import Document, FloatField, \
-    DateTimeField, PointField, LineStringField, StringField
+from pony import orm
 from datetime import datetime
 from LatLon import LatLon, Latitude, Longitude
 
+db = orm.Database()
 
-class Agent(Document):
-    point = PointField()
-    speed = FloatField(default=0)
-    heading = FloatField(default=0)
-    destination_heading = FloatField(default=0)
-    destination = PointField(required=False)
-    stamp = DateTimeField(default=datetime.now)
-    route = LineStringField()
+
+class Agent(db.Entity):
+    lon = orm.Required(float, default=0)
+    lat = orm.Required(float, default=0)
+    speed = orm.Required(float, default=0)
+    heading = orm.Required(float, default=0)
+    destination_heading = orm.Required(float, default=0)
+    dest_lon = orm.Required(float, default=0)
+    dest_lat = orm.Required(float, default=0)
+    stamp = orm.Required(datetime, default=datetime.now)
+    route = orm.Required(orm.Json, default={})
     # route_flock = LineStringField()
-    status = StringField(default="solo")
-    meta = {'allow_inheritance': True}
+    status = orm.Required(str, default="solo")
+
+    def point(self):
+        return LatLon(Latitude(self.lat),
+                      Longitude(self.lon))
+
+    def set_point(self, point):
+        self.lat = float(point.lat)
+        self.lon = float(point.lon)
+
+    def destination(self):
+        return LatLon(Latitude(self.dest_lat),
+                      Longitude(self.dest_lon))
+
+    def set_destination(self, point):
+        self.dest_lat = float(point.lat)
+        self.dest_lon = float(point.lon)
 
     def to_dict(self):
         return {'agent_id': "%s" % self.id,
-                'point': self.point,
+                'point': self.point(),
                 'status': self.status,
                 'in': True if self.status == 'flocking' else False,
                 'speed': self.speed,
@@ -26,19 +44,15 @@ class Agent(Document):
                                  self.heading),
                 'destination_heading': float("%0.2f" %
                                              self.destination_heading),
-                'destination': self.destination,
+                'destination': self.destination(),
                 'stamp': str(self.stamp)}
 
     def __str__(self):
         return "<A-%s [%s] %0.2fm @%sm/s>" % (str(self.id)[-3:],
                                               self.status,
                                               self.distance_to(
-                                                  self.destination),
+                                                  self.destination()),
                                               self.speed)
-
-    def get_point_LatLon(self):
-        return LatLon(Longitude(self.point['coordinates'][1]),
-                      Latitude(self.point['coordinates'][0]))
 
     def update(self, new_point, update_speed=False):
         """
@@ -52,81 +66,38 @@ class Agent(Document):
 
         """
 
-        if 'coordinates' in self.point:
-            a = LatLon(Longitude(self.point['coordinates'][1]),
-                       Latitude(self.point['coordinates'][0]))
-        else:
-            a = LatLon(Longitude(self.point[1]),
-                       Latitude(self.point[0]))
+        self.heading = self.point().heading_initial(new_point)
 
-        if 'coordinates' in new_point:
-            b = LatLon(Longitude(new_point['coordinates'][1]),
-                       Latitude(new_point['coordinates'][0]))
-        else:
-            b = LatLon(Longitude(new_point[1]),
-                       Latitude(new_point[0]))
-
-        if 'coordinates' in self.destination:
-            c = LatLon(Longitude(self.destination['coordinates'][1]),
-                       Latitude(self.destination['coordinates'][0]))
-        else:
-            c = LatLon(Longitude(self.destination[1]),
-                       Latitude(self.destination[0]))
-
-        self.heading = a.heading_initial(b)
-        self.destination_heading = b.heading_initial(c)
+        self.destination_heading = new_point.heading_initial(
+            self.destination())
 
         if update_speed:
             tdelta = datetime.now() - self.stamp
             seconds = tdelta.total_seconds()
-            distance = a.distance(b) / 1000.0
+            distance = self.point().distance(new_point) / 1000.0
             self.speed = distance / seconds
 
         self.stamp = datetime.now()
-        self.point = new_point
-        self.save()
+        self.set_point(new_point)
 
     def heading_to(self, other_point):
         """
         heading from my point to @other_point
         """
-        if 'coordinates' in self.point:
-            a = LatLon(Longitude(self.point['coordinates'][1]),
-                       Latitude(self.point['coordinates'][0]))
-        else:
-            a = LatLon(Longitude(self.point[1]),
-                       Latitude(self.point[0]))
-
-        b = LatLon(Longitude(other_point[1]),
-                   Latitude(other_point[0]))
-
-        return a.heading_initial(b)
+        return self.point().heading_initial(other_point)
 
     def distance_to(self, other_point):
         """
         distance from agent to another point, in metres
+        @other_point must be type LatLon
         """
-        if 'coordinates' in self.point:
-            s = LatLon(Latitude(self.point['coordinates'][1]),
-                       Longitude(self.point['coordinates'][0]))
-        else:
-            s = LatLon(Latitude(self.point[1]),
-                       Longitude(self.point[0]))
-
-        if 'coordinates' in other_point:
-            t = LatLon(Latitude(other_point['coordinates'][1]),
-                       Longitude(other_point['coordinates'][0]))
-        else:
-            t = LatLon(Latitude(other_point[1]),
-                       Longitude(other_point[0]))
-
-        return s.distance(t) * 1000.0
+        return self.point().distance(other_point) * 1000.0
 
     def got_there(self):
         """
         return True if one step or less away
         """
-        if self.distance_to(self.destination) < self.speed:
+        if self.distance_to(self.destination()) < self.speed:
             return True
         else:
             return False
@@ -135,9 +106,8 @@ class Agent(Document):
         """
         move to next point in route
         """
-        self.reload()
         if self.route is None:
-            self.update(self.destination)
+            self.update(self.destination())
         else:
             coordinates = self.route['coordinates'][:]
             if len(coordinates) == 2:
