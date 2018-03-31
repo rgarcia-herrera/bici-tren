@@ -1,5 +1,5 @@
 from mongoengine import connect  # must import connect, used from without
-from agent import Agent
+import agent
 from LatLon import LatLon, Latitude, Longitude
 import random
 from router import Router
@@ -25,7 +25,7 @@ class Flock:
                          sum(lons) / float(len(lons)))
 
 
-class Bike(Agent):
+class Bike(agent.Agent):
 
     def random_ride(self, ne_lng, ne_lat, sw_lng, sw_lat,
                     min_len=2, max_len=10):
@@ -41,23 +41,20 @@ class Bike(Agent):
                        Longitude(random.uniform(sw_lng, ne_lng)))
 
             if a.distance(c) >= min_len and a.distance(c) <= max_len:
-                self.point = (a.lon.decimal_degree,
-                              a.lat.decimal_degree)
-                self.destination = (c.lon.decimal_degree,
-                                    c.lat.decimal_degree)
+                self.set_point(a)
+                self.set_destination(c)
 
-                router = Router(points=[self.point,
-                                        self.destination])
+                router = Router(points=[self.point(),
+                                        self.destination()])
                 if router.route:
-                    self.route = router.route
-                    self.save()
+                    self.route = router.get_refined_route(self.speed)
                     break
 
     def get_flock_candidates(self, rpoint, rdest):
-        return Agent.objects(point__near=self.point,
-                             point__max_distance=rpoint,
-                             destination__near=self.destination,
-                             destination__max_distance=rdest)
+        return agent.Agent.objects(point__near=self.point,
+                                   point__max_distance=rpoint,
+                                   destination__near=self.destination,
+                                   destination__max_distance=rdest)
 
     # def flock_with(self, bikes, heading_diff):
     #     """
