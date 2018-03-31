@@ -62,8 +62,8 @@ def route_from_geojson(geojson):
 class Router:
     """
     intended use:
-        router = Router(points=[(-99.1655, 19.342),
-                                (-99.1611, 19.340)])
+        router = Router(points=[LatLon(Longitude(-99.1655), Latitude(19.342)),
+                                LatLon(Longitude(-99.1611), Latitude(19.340))])
         coarse_route = router.route
         fine_route = router.get_refined_route(speed=10)  # speed in m/s
         finer_route = router.get_refined_route(speed=3)  # speed in m/s
@@ -84,9 +84,7 @@ class Router:
         """
         P = []
         for p in self.points:
-            P.append(",".join([str(x)
-                              for x in
-                              p]))
+            P.append("%s,%s" % (p.lon, p.lat))
         lonlats = "|".join(P)
 
         route_url = "{server}" \
