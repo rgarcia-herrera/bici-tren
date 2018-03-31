@@ -36,7 +36,8 @@ class Agent(db.Entity):
 
     def to_dict(self):
         return {'agent_id': "%s" % self.id,
-                'point': self.point(),
+                'point': {'coordinates': [self.lon,
+                                          self.lat]},
                 'status': self.status,
                 'in': True if self.status == 'flocking' else False,
                 'speed': self.speed,
@@ -44,7 +45,8 @@ class Agent(db.Entity):
                                  self.heading),
                 'destination_heading': float("%0.2f" %
                                              self.destination_heading),
-                'destination': self.destination(),
+                'destination': {'coordinates': [self.dest_lon,
+                                                self.dest_lat]},
                 'stamp': str(self.stamp)}
 
     def __str__(self):
@@ -101,7 +103,6 @@ class Agent(db.Entity):
         else:
             return False
 
-    @orm.db_session
     def step(self):
         """
         move to next point in route
