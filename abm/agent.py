@@ -65,7 +65,6 @@ class Agent(db.Entity):
          - speed, if update_speed=True
 
         """
-
         self.heading = self.point().heading_initial(new_point)
 
         self.destination_heading = new_point.heading_initial(
@@ -102,23 +101,19 @@ class Agent(db.Entity):
         else:
             return False
 
+    @orm.db_session
     def step(self):
         """
         move to next point in route
         """
-        if self.route is None:
-            self.update(self.destination())
+        if self.route:
+            p = self.route.pop(0)
+            p = LatLon(Latitude(p[1]),
+                       Longitude(p[0]))
         else:
-            coordinates = self.route['coordinates'][:]
-            if len(coordinates) == 2:
-                p = coordinates[0]
-                self.route = None
-            else:
-                p = coordinates.pop(0)
-                self.route = coordinates
+            p = self.destination()
 
-            self.save()
-            self.update(p)
+        self.update(p)
 
     def flock(self, radius):
         return Agent.objects(point__near=self.point,
