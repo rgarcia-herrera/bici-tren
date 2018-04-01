@@ -1,4 +1,4 @@
-import agent as model
+import models
 import argparse
 from LatLon import LatLon, Latitude, Longitude
 from time import sleep
@@ -14,8 +14,8 @@ parser.add_argument('--speed', default=3.0, type=float,
 args = parser.parse_args()
 
 
-model.db.bind(provider='sqlite', filename='db.sqlite', create_db=True)
-model.db.generate_mapping(create_tables=True)
+models.db.bind(provider='sqlite', filename='db.sqlite', create_db=True)
+models.db.generate_mapping(create_tables=True)
 
 
 @db_session
@@ -40,7 +40,7 @@ def random_ride(agent, ne_lng, ne_lat, sw_lng, sw_lat,
 
 
 with db_session:
-    b = model.Agent[1]
+    b = models.Agent[1]
     b.speed = args.speed
     random_ride(agent=b,
                 ne_lat=19.461332069967366,
@@ -51,7 +51,7 @@ with db_session:
     commit()
 
 with db_session:
-    b1 = model.Agent[8]
+    b1 = models.Agent[8]
     s = LatLon(Latitude(b.lat - 0.0081),
                Longitude(b.lon - 0.0081))
     t = LatLon(Latitude(b.dest_lat - 0.0081),
@@ -61,8 +61,8 @@ with db_session:
     b1.set_destination(t)
 
 # while not b.got_there():
-#     with model.agent.orm.db_session:
-#         b = model.Bike[1]
+#     with db_session:
+#         b = models.Agent[1]
 #         b.step()
 #     print len(b.route)
 #     sleep(0.1)
