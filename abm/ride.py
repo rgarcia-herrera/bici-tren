@@ -50,9 +50,19 @@ with model.agent.orm.db_session:
                 min_len=8, max_len=10)
     commit()
 
-while not b.got_there():
-    with model.agent.orm.db_session:
-        b = model.Bike[1]
-        b.step()
-    print len(b.route)
-    sleep(0.1)
+with model.agent.orm.db_session:
+    b1 = model.Bike()
+    s = LatLon(Latitude(b.lat - 0.01),
+               Longitude(b.lon - 0.01))
+    t = LatLon(Latitude(b.dest_lat - 0.01),
+               Longitude(b.dest_lon - 0.01))
+
+    b1.set_point(s)
+    b1.set_destination(t)
+
+# while not b.got_there():
+#     with model.agent.orm.db_session:
+#         b = model.Bike[1]
+#         b.step()
+#     print len(b.route)
+#     sleep(0.1)
