@@ -1,8 +1,16 @@
-from mongoengine import connect  # must import connect, used from without
 import agent
 from LatLon import LatLon, Latitude, Longitude
 import random
 from router import Router
+from pony.orm import select
+
+
+def bounding_box(point, degrees=0.1):
+    w_lon = float(point.lon) - degrees
+    e_lon = float(point.lon) + degrees
+    s_lat = float(point.lat) - degrees
+    n_lat = float(point.lat) + degrees
+    return w_lon, e_lon, s_lat, n_lat
 
 
 class Flock:
@@ -44,41 +52,28 @@ class Bike(agent.Agent):
                 self.set_point(a)
                 self.set_destination(c)
 
-                router = Router(points=[self.point(),
-                                        self.destination()])
-                if router.route:
-                    self.route = router.get_refined_route(self.speed)
+                if self.update_route():
                     break
 
-    def get_flock_candidates(self, rpoint, rdest):
-        return agent.Agent.objects(point__near=self.point,
-                                   point__max_distance=rpoint,
-                                   destination__near=self.destination,
-                                   destination__max_distance=rdest)
+    def get_flock_candidates(self, my_radius, dest_radius):
+        p_w_lon, p_e_lon, p_s_lat, p_n_lat = bounding_box(self.point())
+        d_w_lon, d_e_lon, d_s_lat, d_n_lat = bounding_box(self.destination())
 
-    # def flock_with(self, bikes, heading_diff):
-    #     """
-    #     bikes will probably be the output of 'near' or 'within_box'.
+        precandidates = select(b for b in Bike
+                               if b.lon > p_w_lon
+                               and b.lon < p_e_lon
+                               and b.lat > p_s_lat
+                               and b.lat < p_n_lat
 
-    #     If the agent's heading - avg_heading is less than heading_diff
-    #     then flock to centroid.
+                               and b.dest_lon > d_w_lon
+                               and b.dest_lon < d_e_lon
+                               and b.dest_lat > d_s_lat
+                               and b.dest_lat < d_n_lat)
 
-    #     Else abandon flock and head to target.
+        candidates = []
+        for c in precandidates:
+            if self.point().distance(c.point()) < my_radius \
+               and self.destination().distance(c.destination()) < dest_radius:
+                candidates.append(c)
 
-    #     Not implemented yet.
-    #     """
-    #     # compute centroid
-    #     flock = Flock(bikes)
-
-    #     # self.heading = flock.centroid
-
-    # def front_spotlight(self, diameter):
-    #     """
-    #     Seek other agents with similar heading
-    #     as mine in a circle in front of me.
-
-    #     Not implemented yet.
-    #     """
-
-    #     return Bike.objects(point__near=self.point,
-    #                         point__max_distance=diameter)
+        return candidates
