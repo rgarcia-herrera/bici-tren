@@ -2,8 +2,17 @@ from pony import orm
 from router import Router
 from datetime import datetime
 from LatLon import LatLon, Latitude, Longitude
+from pony.orm import select
 
 db = orm.Database()
+
+
+def bounding_box(point, degrees=0.1):
+    w_lon = float(point.lon) - degrees
+    e_lon = float(point.lon) + degrees
+    s_lat = float(point.lat) - degrees
+    n_lat = float(point.lat) + degrees
+    return w_lon, e_lon, s_lat, n_lat
 
 
 class Agent(db.Entity):
@@ -131,3 +140,37 @@ class Agent(db.Entity):
             p = self.destination()
 
         self.update(p)
+
+    def flocking(self):
+        p_w_lon, p_e_lon, p_s_lat, p_n_lat = bounding_box(self.point(),
+                                                          degrees=0.0001)
+        return select(b for b in Agent
+                      if b.id != self.id
+                      and b.lon > p_w_lon
+                      and b.lon < p_e_lon
+                      and b.lat > p_s_lat
+                      and b.lat < p_n_lat).count() > 0
+
+    def get_flock_candidates(self, my_radius, dest_radius):
+        p_w_lon, p_e_lon, p_s_lat, p_n_lat = bounding_box(self.point())
+        d_w_lon, d_e_lon, d_s_lat, d_n_lat = bounding_box(self.destination())
+
+        precandidates = select(b for b in Agent
+                               if b.id != self.id
+                               and b.lon > p_w_lon
+                               and b.lon < p_e_lon
+                               and b.lat > p_s_lat
+                               and b.lat < p_n_lat
+
+                               and b.dest_lon > d_w_lon
+                               and b.dest_lon < d_e_lon
+                               and b.dest_lat > d_s_lat
+                               and b.dest_lat < d_n_lat)
+
+        candidates = []
+        for c in precandidates:
+            if self.point().distance(c.point()) < my_radius \
+               and self.destination().distance(c.destination()) < dest_radius:
+                candidates.append(c)
+
+        return candidates
