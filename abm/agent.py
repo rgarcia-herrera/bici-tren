@@ -105,6 +105,11 @@ class Agent(db.Entity):
             return False
 
     def update_route(self, points=[]):
+        """
+        Include intermediate points between my point and my destination.
+        If no intermediate points given, just download route from my
+        point to my destination.
+        """
         router = Router(points=[self.point(), ]
                         + points
                         + [self.destination(), ])
