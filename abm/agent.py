@@ -1,4 +1,5 @@
 from pony import orm
+from router import Router
 from datetime import datetime
 from LatLon import LatLon, Latitude, Longitude
 
@@ -103,6 +104,16 @@ class Agent(db.Entity):
         else:
             return False
 
+    def update_route(self, points=[]):
+        router = Router(points=[self.point(), ]
+                        + points
+                        + [self.destination(), ])
+        if router.route:
+            self.route = router.get_refined_route(self.speed)
+            return True
+        else:
+            return False
+
     def step(self):
         """
         move to next point in route
@@ -115,9 +126,3 @@ class Agent(db.Entity):
             p = self.destination()
 
         self.update(p)
-
-    def flock(self, radius):
-        return Agent.objects(point__near=self.point,
-                             point__max_distance=radius,
-                             heading__gte=self.heading - 0.15,
-                             heading__lte=self.heading + 0.15)
