@@ -46,7 +46,6 @@ with db_session:
 
     id0 = b0.id
     id1 = b1.id
-    print id1, id0
 
 with db_session:
     b = models.Agent[id0]
@@ -80,5 +79,6 @@ while not b.got_there():
         if random.choice([True, False, False]):
             b1.flock()
 
-        print b.status, len(b.route), b1.status, \
-            len(b1.route), b.point().distance(b1.point())
+        print b.point().distance(b.destination()),\
+            b1.point().distance(b1.destination()),\
+            b.point().distance(b1.point())
