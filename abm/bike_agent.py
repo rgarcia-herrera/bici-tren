@@ -1,7 +1,4 @@
 import agent
-from LatLon import LatLon, Latitude, Longitude
-import random
-from router import Router
 from pony.orm import select
 
 
@@ -34,26 +31,6 @@ class Flock:
 
 
 class Bike(agent.Agent):
-
-    def random_ride(self, ne_lng, ne_lat, sw_lng, sw_lat,
-                    min_len=2, max_len=10):
-        """
-        params are bounding box and minimum length in kilometres
-        """
-        print "seeking random route"
-        while True:
-
-            a = LatLon(Latitude(random.uniform(ne_lat, sw_lat)),
-                       Longitude(random.uniform(sw_lng, ne_lng)))
-            c = LatLon(Latitude(random.uniform(ne_lat, sw_lat)),
-                       Longitude(random.uniform(sw_lng, ne_lng)))
-
-            if a.distance(c) >= min_len and a.distance(c) <= max_len:
-                self.set_point(a)
-                self.set_destination(c)
-
-                if self.update_route():
-                    break
 
     def get_flock_candidates(self, my_radius, dest_radius):
         p_w_lon, p_e_lon, p_s_lat, p_n_lat = bounding_box(self.point())
