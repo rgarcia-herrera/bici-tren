@@ -15,6 +15,25 @@ def bounding_box(point, degrees=0.1):
     return w_lon, e_lon, s_lat, n_lat
 
 
+class Flock:
+    """
+    Flock object is created from a list of agents
+    and has a useful centroid
+    """
+    def __init__(self, agents):
+        lats = list()
+        lons = list()
+        speeds = []
+        for b in agents:
+            speeds.append(b.speed)
+            lats.append(float(b.point().lat))
+            lons.append(float(b.point().lon))
+
+        self.mean_speed = sum(speeds) / float(len(speeds))
+        self.centroid = LatLon(Latitude(sum(lats) / len(lats)),
+                               Longitude(sum(lons) / len(lons)))
+
+
 class Agent(db.Entity):
     lon = orm.Required(float, default=0)
     lat = orm.Required(float, default=0)
@@ -27,6 +46,9 @@ class Agent(db.Entity):
     route = orm.Required(orm.Json, default={})
     # route_flock = LineStringField()
     status = orm.Required(str, default="solo")
+
+    point_altruism = orm.Required(float, default=0.1)
+    dest_altruism = orm.Required(float, default=0.2)
 
     def point(self):
         return LatLon(Latitude(self.lat),
@@ -174,3 +196,18 @@ class Agent(db.Entity):
                 candidates.append(c)
 
         return candidates
+
+    def flock(self):
+        if self.flocking():
+            self.status = "flock"
+        else:
+            ride_length = self.point().distance(self.destination())
+            my_radius = ride_length * self.point_altruism
+            dest_radius = ride_length * self.dest_altruism
+            candidates = self.get_flock_candidates(my_radius, dest_radius)
+            if candidates:
+                f = Flock(candidates)
+                if self.update_route(points=[f.centroid, ]):
+                    self.status = "flocking"
+            else:
+                self.status = "solo"

@@ -14,7 +14,7 @@ parser.add_argument('--speed', default=3.0, type=float,
 args = parser.parse_args()
 
 
-models.db.bind(provider='sqlite', filename='db.sqlite', create_db=True)
+models.db.bind(provider='sqlite', filename=':memory:', create_db=True)
 models.db.generate_mapping(create_tables=True)
 
 
@@ -40,7 +40,16 @@ def random_ride(agent, ne_lng, ne_lat, sw_lng, sw_lat,
 
 
 with db_session:
-    b = models.Agent[1]
+    b0 = models.Agent()
+    b1 = models.Agent()
+    commit()
+
+    id0 = b0.id
+    id1 = b1.id
+    print id1, id0
+
+with db_session:
+    b = models.Agent[id0]
     b.speed = args.speed
     random_ride(agent=b,
                 ne_lat=19.461332069967366,
@@ -48,21 +57,28 @@ with db_session:
                 sw_lat=19.40467336236742,
                 sw_lng=-99.17787551879884,
                 min_len=8, max_len=10)
-    commit()
 
-with db_session:
-    b1 = models.Agent[8]
-    s = LatLon(Latitude(b.lat - 0.0081),
-               Longitude(b.lon - 0.0081))
-    t = LatLon(Latitude(b.dest_lat - 0.0081),
+    b1 = models.Agent[id1]
+    b1.speed = args.speed
+    s = LatLon(Latitude(b.lat - 0.0021),
+               Longitude(b.lon + 0.0041))
+    t = LatLon(Latitude(b.dest_lat + 0.0081),
                Longitude(b.dest_lon - 0.0081))
 
     b1.set_point(s)
     b1.set_destination(t)
+    b1.update_route()
 
-# while not b.got_there():
-#     with db_session:
-#         b = models.Agent[1]
-#         b.step()
-#     print len(b.route)
-#     sleep(0.1)
+while not b.got_there():
+    with db_session:
+        b = models.Agent[id0]
+        b1 = models.Agent[id1]
+        b.step()
+        b1.step()
+        if random.choice([True, False, False]):
+            b.flock()
+        if random.choice([True, False, False]):
+            b1.flock()
+
+        print b.status, len(b.route), b1.status, \
+            len(b1.route), b.point().distance(b1.point())

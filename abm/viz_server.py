@@ -4,19 +4,18 @@ from flask import jsonify, Response, request
 from flask_cors import CORS
 import svgwrite
 
-import bike_agent as model
+import models
 
-from pony.orm import select
+from pony.orm import select, db_session
 
-from pprint import pprint
 
 app = Flask(__name__, static_url_path='')
 
 app.secret_key = 'F12Zr47j\3yX R~X@H!jmM]Lwf/,?KT'
 CORS(app)
 
-model.agent.db.bind(provider='sqlite', filename='db.sqlite', create_db=False)
-model.agent.db.generate_mapping(create_tables=False)
+models.db.bind(provider='sqlite', filename='db.sqlite', create_db=False)
+models.db.generate_mapping(create_tables=False)
 
 env = Environment(loader=FileSystemLoader('templates'))
 
@@ -29,8 +28,8 @@ def map():
 
 @app.route('/bike/<bike_id>/<destination_heading>_marker.svg')
 def bike_marker(bike_id, destination_heading):
-    with model.agent.orm.db_session:
-        b = model.Bike[bike_id]
+    with db_session:
+        b = models.Agent[bike_id]
         return Response(b.marker(),
                         mimetype="image/svg+xml")
 
@@ -43,23 +42,23 @@ def get_map(bike_id):
 
 @app.route('/bike/<bike_id>')
 def get_bike(bike_id):
-    with model.agent.orm.db_session:
-        b = model.Bike[bike_id]
+    with db_session:
+        b = models.Agent[bike_id]
         return jsonify(b.to_dict())
 
 
 @app.route('/bikes_in/')
-@model.agent.orm.db_session
+@db_session
 def bikes_in():
         print [bk.to_dict()
-               for bk in select(b for b in model.Bike if
+               for bk in select(b for b in models.Agent if
                                 b.lon > float(request.args.get('sw_lng'))
                                 and b.lon < float(request.args.get('ne_lng'))
                                 and b.lat > float(request.args.get('sw_lat'))
                                 and b.lat < float(request.args.get('ne_lat')))]
 
         return jsonify([bk.to_dict()
-                        for bk in select(b for b in model.Bike if
+                        for bk in select(b for b in models.Agent if
                                          b.lon > float(request.args.get('sw_lng'))
                                          and b.lon < float(request.args.get('ne_lng'))
                                          and b.lat > float(request.args.get('sw_lat'))
