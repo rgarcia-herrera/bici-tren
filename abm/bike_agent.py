@@ -60,7 +60,8 @@ class Bike(agent.Agent):
         d_w_lon, d_e_lon, d_s_lat, d_n_lat = bounding_box(self.destination())
 
         precandidates = select(b for b in Bike
-                               if b.lon > p_w_lon
+                               if b.id != self.id
+                               and b.lon > p_w_lon
                                and b.lon < p_e_lon
                                and b.lat > p_s_lat
                                and b.lat < p_n_lat
