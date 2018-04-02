@@ -1,0 +1,9 @@
+executable     = ride.sh
+
+output         = log/ride_$(Process).out
+error          = log/ride_$(Process).err
+log            = log/ride_$(Process).log
+
+Requirements = (Machine == "katsina5-1.lancis.ecologia.unam.mx")
+
+queue
