@@ -1,9 +1,10 @@
 import models
 import argparse
-from pony.orm import db_session, commit, select, count
+from pony.orm import db_session, rollback, select, count
 import random
 import gzip
 import csv
+import pickle
 from bike_stations import ecobici
 
 parser = argparse.ArgumentParser(
@@ -15,6 +16,9 @@ parser.add_argument('--speed', default=3.0, type=float,
 parser.add_argument('--mindful', default=0.33, type=float,
                     help='probability of agents seeking to flock at each step')
 
+parser.add_argument('--log', type=argparse.FileType('w'), required=True,
+                    help='path to output pickled logfile')
+
 args = parser.parse_args()
 
 
@@ -22,29 +26,38 @@ models.db.bind(provider='sqlite', filename=':memory:', create_db=True)
 models.db.generate_mapping(create_tables=True)
 
 
-# load rides to db
-with db_session:
-    with gzip.open('../data/1k_rides.csv.gz') as f:
-        reader = csv.reader(f, delimiter=' ')
-        for row in reader:
-            b = models.Agent()
-            b.speed = args.speed
-            b.set_point(ecobici[row[0]])
-            b.set_destination(ecobici[row[2]])
-            b.update_route()
+print "load rides to db"
+with gzip.open('../data/100_rides.csv.gz') as f:
+    reader = csv.reader(f, delimiter=' ')
+    for row in reader:
+        if row[0] != row[2]:
+            with db_session:
+                try:
+                    b = models.Agent()
+                    b.speed = args.speed
+                    b.set_point(ecobici[row[0]])
+                    b.set_destination(ecobici[row[2]])
+                    b.update_route()
+                except:
+                    rollback()
+            print b.id
 
-            commit()
 
-
-# ride them all home
-t = 0
+print " ride them all home"
+t = []
 while True:
     with db_session:
-        if count(bike for bike in models.Agent) == 0:
+        status = select(
+            (count(b.status == 'solo'),
+             count(b.status == 'flocking'),
+             count(b.status == 'flock')) for b in models.Agent).get()
+
+        if sum(status) == 0:
             break
+        else:
+            t.append(status)
 
         for b in select(bike for bike in models.Agent):
-            print b.id, t, b.status
 
             b.step()
 
@@ -53,4 +66,4 @@ while True:
             elif random.random() < args.mindful:
                 b.flock()
 
-        t += 1
+pickle.dump(t, args.log)
