@@ -7,9 +7,13 @@ import pickle
 import time
 from bike_stations import ecobici
 import minibar
+from multiprocessing.dummy import Pool as ThreadPool
 
 parser = argparse.ArgumentParser(
-    description='simulate 10,000 rides!')
+    description='simulate N rides!')
+
+parser.add_argument('--threads', default=4, type=int,
+                    help='how many threads to use in pool')
 
 parser.add_argument('--speed', default=3.0, type=float,
                     help='speed in meters per second, default=3.0')
@@ -20,10 +24,10 @@ parser.add_argument('--N', default=100, type=int,
 parser.add_argument('--steps', default=10, type=int,
                     help='simulation time steps')
 
-parser.add_argument('--min_len', default=8.33, type=float,
+parser.add_argument('--min_len', default=5.0, type=float,
                     help='minimum ride length in km')
 
-parser.add_argument('--max_len', default=10.33, type=float,
+parser.add_argument('--max_len', default=10.0, type=float,
                     help='maximum ride length in km')
 
 
@@ -35,11 +39,11 @@ parser.add_argument('--log', type=argparse.FileType('w'), required=True,
 
 args = parser.parse_args()
 
+pool = ThreadPool(args.threads)
 
 print "creating bikes"
-rides = {}
-all_bikes = []
-for j in minibar.bar(range(args.N)):
+
+def new_bike(n):
     b = models.Agent()
     b.speed = args.speed
     b.random_ride(ne_lat=19.461332069967366,
@@ -47,44 +51,42 @@ for j in minibar.bar(range(args.N)):
                   sw_lat=19.40467336236742,
                   sw_lng=-99.17787551879884,
                   min_len=args.min_len, max_len=args.max_len)
-    all_bikes.append(b)
-    rides[id(b)] = {'steps_orig': len(b.route),
-                    'steps_given': 0,
-                    'got_there': False}
+    b.steps_orig = len(b.route)
+    return b
 
-print
+all_bikes = pool.map(new_bike, range(args.N))
+
 print "ride them home"
 
+def ride(b):
+    b.step()
+    if random.random() < args.mindful:
+        b.flock(all_bikes)
+
+    return b
+
 t = []
+trips = []
 for j in minibar.bar(range(args.steps)):
-    solo = len(filter(lambda b: b.status == 'solo', all_bikes))
-    flocking = len(filter(lambda b: b.status == 'flocking', all_bikes))
-    flock = len(filter(lambda b: b.status == 'flock', all_bikes))
-    t.append([solo, flocking, flock])
+    t.append([len(filter(lambda b: b.status == 'solo', all_bikes)),
+              len(filter(lambda b: b.status == 'flocking', all_bikes)),
+              len(filter(lambda b: b.status == 'flock', all_bikes))])
 
-    for b in all_bikes:
-        rides[id(b)]['steps_given'] = b.steps
+    trips += [(bk.steps_orig,
+               bk.steps) for bk in all_bikes if bk.got_there()]
 
-        if b.got_there():
-            rides[id(b)]['got_there'] = True
-            all_bikes.remove(b)
+    all_bikes = [bk for bk in all_bikes if not bk.got_there()]
 
-            b = models.Agent()
-            b.speed = args.speed
-            b.random_ride(ne_lat=19.461332069967366,
-                          ne_lng=-99.09204483032227,
-                          sw_lat=19.40467336236742,
-                          sw_lng=-99.17787551879884,
-                          min_len=args.min_len, max_len=args.max_len)
-            all_bikes.append(b)
-            rides[id(b)] = {'direct': len(b.route),
-                            'flocking': 0,
-                            'got_there': False}
-        else:
-            b.step()
-            if random.random() < args.mindful:
-                b.flock(all_bikes)
+    bike_deficit = args.N - len(all_bikes)
+    for n in range(bike_deficit):
+        all_bikes.append(new_bike)
+
+    all_bikes = pool.map(ride, all_bikes)
 
 pickle.dump({'t':t,
-             'rides': rides},
+             'trips': trips},
             args.log)
+
+
+pool.close()
+pool.join()
