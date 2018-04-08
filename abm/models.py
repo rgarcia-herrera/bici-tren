@@ -1,11 +1,7 @@
-from pony import orm
 from router import Router
 from datetime import datetime
 from LatLon import LatLon, Latitude, Longitude
-from pony.orm import select
-
-db = orm.Database()
-
+import random
 
 def bounding_box(point, degrees=0.1):
     w_lon = float(point.lon) - degrees
@@ -34,21 +30,22 @@ class Flock:
                                Longitude(sum(lons) / len(lons)))
 
 
-class Agent(db.Entity):
-    lon = orm.Required(float, default=0)
-    lat = orm.Required(float, default=0)
-    speed = orm.Required(float, default=0)
-    heading = orm.Required(float, default=0)
-    destination_heading = orm.Required(float, default=0)
-    dest_lon = orm.Required(float, default=0)
-    dest_lat = orm.Required(float, default=0)
-    stamp = orm.Required(datetime, default=datetime.now)
-    route = orm.Required(orm.Json, default={})
-    # route_flock = LineStringField()
-    status = orm.Required(str, default="solo")
+class Agent():
+    lon = 0
+    lat = 0
+    speed = 3
+    heading = 0
+    destination_heading = 0
+    dest_lon = 0
+    dest_lat = 0
+    stamp = datetime.now()
+    route = []
+    status = "solo"
 
-    point_altruism = orm.Required(float, default=0.1)
-    dest_altruism = orm.Required(float, default=0.2)
+    point_altruism = 0.1
+    dest_altruism = 0.2
+
+    steps = 0  # steps run
 
     def point(self):
         return LatLon(Latitude(self.lat),
@@ -65,28 +62,6 @@ class Agent(db.Entity):
     def set_destination(self, point):
         self.dest_lat = float(point.lat)
         self.dest_lon = float(point.lon)
-
-    def to_dict(self):
-        return {'agent_id': "%s" % self.id,
-                'point': {'coordinates': [self.lon,
-                                          self.lat]},
-                'status': self.status,
-                'in': True if self.status == 'flocking' else False,
-                'speed': self.speed,
-                'heading': float("%0.2f" %
-                                 self.heading),
-                'destination_heading': float("%0.2f" %
-                                             self.destination_heading),
-                'destination': {'coordinates': [self.dest_lon,
-                                                self.dest_lat]},
-                'stamp': str(self.stamp)}
-
-    def __str__(self):
-        return "<A-%s [%s] %0.2fm @%sm/s>" % (str(self.id)[-3:],
-                                              self.status,
-                                              self.distance_to(
-                                                  self.destination()),
-                                              self.speed)
 
     def update(self, new_point, update_speed=False):
         """
@@ -162,33 +137,35 @@ class Agent(db.Entity):
             p = self.destination()
 
         self.update(p)
+        self.steps += 1
 
-    def flocking(self):
-        p_w_lon, p_e_lon, p_s_lat, p_n_lat = bounding_box(self.point(),
-                                                          degrees=0.0001)
-        return select(b for b in Agent
-                      if b.id != self.id
-                      and b.lon > p_w_lon
-                      and b.lon < p_e_lon
-                      and b.lat > p_s_lat
-                      and b.lat < p_n_lat).count() > 0
+    def flocking(self, bike_list):
 
-    def get_flock_candidates(self, my_radius, dest_radius):
-        p_w_lon, p_e_lon, p_s_lat, p_n_lat = bounding_box(self.point())
-        d_w_lon, d_e_lon, d_s_lat, d_n_lat = bounding_box(self.destination())
+        def in_flock(b):
+            p_w_lon, p_e_lon, p_s_lat, p_n_lat = bounding_box(self.point(),
+                                                              degrees=0.0001)
+            if (id(self) != id(b) and b.lon > p_w_lon and b.lon < p_e_lon
+                    and b.lat > p_s_lat and b.lat < p_n_lat):
+                return True
 
-        precandidates = select(b for b in Agent
-                               if b.id != self.id
-                               and b.lon > p_w_lon
-                               and b.lon < p_e_lon
-                               and b.lat > p_s_lat
-                               and b.lat < p_n_lat
+        return filter(in_flock, bike_list)
 
-                               and b.dest_lon > d_w_lon
-                               and b.dest_lon < d_e_lon
-                               and b.dest_lat > d_s_lat
-                               and b.dest_lat < d_n_lat)
+    def get_flock_candidates(self, my_radius, dest_radius, bike_list):
 
+        p_w_lon, p_e_lon, \
+            p_s_lat, p_n_lat = bounding_box(self.point())
+        d_w_lon, d_e_lon, \
+            d_s_lat, d_n_lat = bounding_box(self.destination())
+
+        def candidate(b):
+            if id(b) != id(self) \
+               and b.lon > p_w_lon and b.lon < p_e_lon \
+               and b.lat > p_s_lat and b.lat < p_n_lat \
+               and b.dest_lon > d_w_lon and b.dest_lon < d_e_lon \
+               and b.dest_lat > d_s_lat and b.dest_lat < d_n_lat:
+                return True
+
+        precandidates = filter(candidate, bike_list)
         candidates = []
         for c in precandidates:
             if self.point().distance(c.point()) < my_radius \
@@ -197,17 +174,46 @@ class Agent(db.Entity):
 
         return candidates
 
-    def flock(self):
-        if self.flocking():
+    def flock(self, bike_list):
+        if self.flocking(bike_list):
             self.status = "flock"
         else:
             ride_length = self.point().distance(self.destination())
             my_radius = ride_length * self.point_altruism
             dest_radius = ride_length * self.dest_altruism
-            candidates = self.get_flock_candidates(my_radius, dest_radius)
+            candidates = self.get_flock_candidates(my_radius,
+                                                   dest_radius,
+                                                   bike_list)
             if candidates:
                 f = Flock(candidates)
                 if self.update_route(points=[f.centroid, ]):
                     self.status = "flocking"
             else:
                 self.status = "solo"
+
+    def __str__(self):
+        return "<A-%s [%s] %0.2fm @%sm/s %s>" % (id(self),
+                                                 self.status,
+                                                 self.distance_to(
+                                                     self.destination()),
+                                                 self.speed,
+                                                 self.point())
+
+    def random_ride(self, ne_lng, ne_lat, sw_lng, sw_lat,
+                    min_len=2, max_len=10):
+        """
+        params are bounding box and min/max length in kilometres
+        """
+        while True:
+
+            a = LatLon(Latitude(random.uniform(ne_lat, sw_lat)),
+                       Longitude(random.uniform(sw_lng, ne_lng)))
+            b = LatLon(Latitude(random.uniform(ne_lat, sw_lat)),
+                       Longitude(random.uniform(sw_lng, ne_lng)))
+
+            if a.distance(b) >= min_len and a.distance(b) <= max_len:
+                self.set_point(a)
+                self.set_destination(b)
+
+                if self.update_route():
+                    break
