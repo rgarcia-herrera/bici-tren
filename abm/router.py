@@ -1,13 +1,5 @@
 from LatLon import LatLon, Latitude, Longitude
-import json
-
-import requests, urllib
-
-class UnquotedSession(requests.Session):
-    def send(self, *a, **kw):
-        # a[0] is prepared request
-        a[0].url = a[0].url.replace(urllib.quote("|"), "|")
-        return requests.Session.send(self, *a, **kw)
+import requests
 
 
 def split(s, t, speed):
@@ -58,53 +50,53 @@ def route_from_geojson(geojson):
     """
     returns just the coordinates list
     """
-    try:
-        return [(c[0], c[1])
-                for c in route['features'][0]['geometry']['coordinates']]
-    except ValueError:
-        return []
+    return [(c[0], c[1])
+            for c in geojson['features'][0]['geometry']['coordinates']]
 
 
 class Router:
     """
     intended use:
-        router = Router(points=[LatLon(Longitude(-99.1655), Latitude(19.342)),
-                                LatLon(Longitude(-99.1611), Latitude(19.340))])
-        coarse_route = router.route
-        fine_route = router.get_refined_route(speed=10)  # speed in m/s
-        finer_route = router.get_refined_route(speed=3)  # speed in m/s
+        router = Router(protocol='http', host='localhost', port=17777)
+        points = [LatLon(Latitude(19.461332069967366),
+                         Longitude(-99.09204483032227)),
+                  LatLon(Latitude(19.40467336236742),
+                         Longitude(-99.17787551879884))]
+        coarse_route = router.get_route(points=points)
+        fine_route = router.get_route(points=points, speed=10)  # speed in m/s
+        finer_route = router.get_route(points=points, speed=3)  # speed in m/s
     """
 
-    def __init__(self, points,
+    def __init__(self,
                  protocol='http', host='localhost', port=17777):
-        self.points = points
-        self.server = "{protocol}://{host}:{port}".format(
+
+        self.route_url = "{protocol}://{host}:{port}/brouter".format(
             protocol=protocol,
             host=host,
             port=port)
-        self.session = UnquotedSession()
-        self.update_route()
 
-    def update_route(self):
+        self.session = requests.Session()
+
+    def get_raw_route(self, points):
         """
-        Use brouter server to get route
+        Use brouter server to get route thru points
         """
-        P = []
-        for p in self.points:
-            P.append("%s,%s" % (p.lon, p.lat))
-        lonlats = u"|".join(P)
+        lonlats = u"|".join(["%s,%s" % (p.lon, p.lat)
+                             for p in points])
 
-        route_url = self.server + "/brouter?"
+        params = "?lonlats=%s&profile=trekking&alternativeidx=0" % lonlats \
+                 + "&format=geojson"
 
-        params = "lonlats={lonlats}" \
-                 + "&profile=trekking&alternativeidx=0&format=geojson"
+        response = self.session.get(self.route_url + params)
 
-        params = params.format(lonlats=lonlats)
+        try:
+            return route_from_geojson(response.json())
+        except ValueError:
+            return []
 
-        response = self.session.get(route_url + params)
-
-        self.route = route_from_geojson(response.json())
-
-
-    def get_refined_route(self, speed):
-        return refine(self.route, speed)
+    def get_route(self, points, speed=None):
+        if speed:
+            return refine(self.get_raw_route(points),
+                          speed)
+        else:
+            return self.get_raw_route(points)
