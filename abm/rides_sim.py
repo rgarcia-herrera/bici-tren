@@ -1,11 +1,7 @@
 import models
 import argparse
 import random
-import gzip
-import csv
 import pickle
-import time
-from bike_stations import ecobici
 import minibar
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -39,11 +35,9 @@ parser.add_argument('--log', type=argparse.FileType('w'), required=True,
 
 args = parser.parse_args()
 
-pool = ThreadPool(args.threads)
-
-print "creating bikes"
 
 def new_bike(n):
+    """ return new bike instance """
     b = models.Agent()
     b.speed = args.speed
     b.random_ride(ne_lat=19.461332069967366,
@@ -54,9 +48,6 @@ def new_bike(n):
     b.steps_orig = len(b.route)
     return b
 
-all_bikes = pool.map(new_bike, range(args.N))
-
-print "ride them home"
 
 def ride(b):
     b.step()
@@ -65,28 +56,40 @@ def ride(b):
 
     return b
 
+
+pool = ThreadPool(args.threads)
+
+print "creating bikes"
+all_bikes = pool.map(new_bike, range(args.N))
+
+print "ride them home"
 t = []
 trips = []
 for j in minibar.bar(range(args.steps)):
-    t.append([len(filter(lambda b: b.status == 'solo', all_bikes)),
-              len(filter(lambda b: b.status == 'flocking', all_bikes)),
-              len(filter(lambda b: b.status == 'flock', all_bikes))])
-
-    trips += [(bk.steps_orig,
-               bk.steps) for bk in all_bikes if bk.got_there()]
-
     all_bikes = [bk for bk in all_bikes if not bk.got_there()]
 
-    bike_deficit = args.N - len(all_bikes)
-    for n in range(bike_deficit):
-        all_bikes.append(new_bike)
+    if len(all_bikes) == 0:
+        break
+    else:
+        t.append([len(filter(lambda b: b.status == 'solo', all_bikes)),
+                  len(filter(lambda b: b.status == 'flocking', all_bikes)),
+                  len(filter(lambda b: b.status == 'flocked', all_bikes))])
+        all_bikes = pool.map(ride, all_bikes)
 
-    all_bikes = pool.map(ride, all_bikes)
-
-pickle.dump({'t':t,
-             'trips': trips},
-            args.log)
+#    trips += [(bk.steps_orig,
+#              bk.steps) for bk in all_bikes if bk.got_there()]
 
 
-pool.close()
-pool.join()
+    #bike_deficit = args.N - len(all_bikes)
+    #for n in range(bike_deficit):
+    #    all_bikes.append(new_bike)
+
+
+pickle.dump(t, args.log)
+
+#             'trips': trips},
+#            args.log)
+
+
+#pool.close()
+#pool.join()
