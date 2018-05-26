@@ -1,6 +1,13 @@
-import urllib2
 from LatLon import LatLon, Latitude, Longitude
 import json
+
+import requests, urllib
+
+class UnquotedSession(requests.Session):
+    def send(self, *a, **kw):
+        # a[0] is prepared request
+        a[0].url = a[0].url.replace(urllib.quote("|"), "|")
+        return requests.Session.send(self, *a, **kw)
 
 
 def split(s, t, speed):
@@ -52,7 +59,6 @@ def route_from_geojson(geojson):
     returns just the coordinates list
     """
     try:
-        route = json.loads(geojson)
         return [(c[0], c[1])
                 for c in route['features'][0]['geometry']['coordinates']]
     except ValueError:
@@ -76,6 +82,7 @@ class Router:
             protocol=protocol,
             host=host,
             port=port)
+        self.session = UnquotedSession()
         self.update_route()
 
     def update_route(self):
@@ -85,20 +92,19 @@ class Router:
         P = []
         for p in self.points:
             P.append("%s,%s" % (p.lon, p.lat))
-        lonlats = "|".join(P)
+        lonlats = u"|".join(P)
 
-        route_url = "{server}" \
-                    + "/brouter?lonlats={lonlats}" \
-                    + "&profile=trekking&alternativeidx=0&format=geojson"
+        route_url = self.server + "/brouter?"
 
-        route_url = route_url.format(
-            server=self.server,
-            lonlats=lonlats)
-#        try:
-        response = urllib2.urlopen(route_url, timeout=2)
-        broute_json = response.read()
-        self.route = route_from_geojson(broute_json)
-#        except:
+        params = "lonlats={lonlats}" \
+                 + "&profile=trekking&alternativeidx=0&format=geojson"
+
+        params = params.format(lonlats=lonlats)
+
+        response = self.session.get(route_url + params)
+
+        self.route = route_from_geojson(response.json())
+
 
     def get_refined_route(self, speed):
         return refine(self.route, speed)
