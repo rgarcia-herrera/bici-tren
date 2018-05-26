@@ -1,9 +1,12 @@
 executable     = ride.sh
+Arguments = log/ride_$(Process).pickle
 
 output         = log/ride_$(Process).out
 error          = log/ride_$(Process).err
 log            = log/ride_$(Process).log
 
-Requirements = (Machine == "katsina5-1.lancis.ecologia.unam.mx")
+Requirements = (Machine == "katsina5-3.lancis.ecologia.unam.mx")
+
+request_cpus   = 20
 
 queue
