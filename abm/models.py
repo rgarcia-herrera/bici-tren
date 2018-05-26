@@ -3,6 +3,7 @@ from datetime import datetime
 from LatLon import LatLon, Latitude, Longitude
 import random
 
+
 def bounding_box(point, degrees=0.1):
     w_lon = float(point.lon) - degrees
     e_lon = float(point.lon) + degrees
@@ -31,21 +32,24 @@ class Flock:
 
 
 class Agent():
-    lon = 0
-    lat = 0
-    speed = 3
-    heading = 0
-    destination_heading = 0
-    dest_lon = 0
-    dest_lat = 0
-    stamp = datetime.now()
-    route = []
-    status = "solo"
 
-    point_altruism = 0.1
-    dest_altruism = 0.2
+    def __init__(self, speed=3, point_altruism=0.1, dest_altruism=0.2):
+        self.lon = 0
+        self.lat = 0
+        self.speed = speed
+        self.heading = 0
+        self.destination_heading = 0
+        self.dest_lon = 0
+        self.dest_lat = 0
+        self.stamp = datetime.now()
+        self.route = []
+        self.status = "solo"
 
-    steps = 0  # steps run
+        self.point_altruism = point_altruism
+        self.dest_altruism = dest_altruism
+
+        self.steps = 0  # steps run
+        self.router = Router()
 
     def point(self):
         return LatLon(Latitude(self.lat),
@@ -116,11 +120,11 @@ class Agent():
         If no intermediate points given, just download route from my
         point to my destination.
         """
-        router = Router(points=[self.point(), ]
-                        + points
-                        + [self.destination(), ])
-        if router.route:
-            self.route = router.get_refined_route(self.speed)
+        route = self.router.get_route(points=[self.point(), ]
+                                      + points
+                                      + [self.destination(), ])
+        if route:
+            self.route = route
             return True
         else:
             return False
@@ -176,7 +180,7 @@ class Agent():
 
     def flock(self, bike_list):
         if self.flocking(bike_list):
-            self.status = "flock"
+            self.status = "flocked"
         else:
             ride_length = self.point().distance(self.destination())
             my_radius = ride_length * self.point_altruism
